@@ -1,0 +1,5224 @@
+{
+  "active_months": [
+    "2026-01",
+    "2026-02",
+    "2026-03"
+  ],
+  "companies": {
+    "abhi": {
+      "display_name": "ABHI",
+      "formula_row_count": 23,
+      "month_columns_found": 58,
+      "rows": {
+        "14": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=L45",
+            "=N45",
+            "=R45"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 58,
+          "forecast": true,
+          "forecast_examples": [
+            "=H14*(1+20%)",
+            "=V14*1.75",
+            "=AN14*1.05"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 58,
+          "label": "NTV"
+        },
+        "15": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=L46",
+            "=N46",
+            "=R46"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 58,
+          "forecast": true,
+          "forecast_examples": [
+            "=G14*0.02",
+            "=I14*0.02",
+            "=K14*0.02"
+          ],
+          "forecast_formula_count": 44,
+          "forecast_nonblank_count": 58,
+          "label": "Net Revenue"
+        },
+        "16": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-BB199",
+            "=-BD199",
+            "=-BF199"
+          ],
+          "actual_formula_count": 33,
+          "actual_nonblank_count": 33,
+          "forecast": true,
+          "forecast_examples": [
+            "=-BC14*2.2%",
+            "=-BE14*2.2%",
+            "=-BG14*2.2%"
+          ],
+          "forecast_formula_count": 33,
+          "forecast_nonblank_count": 33,
+          "label": "COS"
+        },
+        "17": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BB15+BB16",
+            "=BD15+BD16",
+            "=BF15+BF16"
+          ],
+          "actual_formula_count": 33,
+          "actual_nonblank_count": 33,
+          "forecast": true,
+          "forecast_examples": [
+            "=BC15+BC16",
+            "=BE15+BE16",
+            "=BG15+BG16"
+          ],
+          "forecast_formula_count": 33,
+          "forecast_nonblank_count": 33,
+          "label": "Gross Profit"
+        },
+        "18": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BB108",
+            "=BD210",
+            "=BF210"
+          ],
+          "actual_formula_count": 33,
+          "actual_nonblank_count": 33,
+          "forecast": true,
+          "forecast_examples": [
+            "=BB10*(19%/12)",
+            "=BB18*1.1",
+            "=BD18*1.1"
+          ],
+          "forecast_formula_count": 33,
+          "forecast_nonblank_count": 33,
+          "label": "Other Income"
+        },
+        "19": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-L47",
+            "=-N47",
+            "=-R47"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 58,
+          "label": "Salaries"
+        },
+        "21": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-L51",
+            "=-N51",
+            "=-R51"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 58,
+          "label": "Marketing"
+        },
+        "22": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-(L52+L50+L49)",
+            "=-(N52+N50+N49)",
+            "=-(R52+R50+R49)"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 58,
+          "label": "SG&A"
+        },
+        "23": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=L53",
+            "=N53",
+            "=-R53"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [
+            "=CB23*0.95",
+            "=CD23*0.95",
+            "=CF23*0.95"
+          ],
+          "forecast_formula_count": 19,
+          "forecast_nonblank_count": 58,
+          "label": "Other Expenses (inc.one time)"
+        },
+        "24": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(D19:D22)",
+            "=SUM(F19:F23)",
+            "=SUM(H19:H23)"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(E19:E22)",
+            "=-SUM(G19:G23)",
+            "=SUM(I19:I23)"
+          ],
+          "forecast_formula_count": 58,
+          "forecast_nonblank_count": 58,
+          "label": "Total Expenses"
+        },
+        "25": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-BB212",
+            "=-BD212",
+            "=-BF212"
+          ],
+          "actual_formula_count": 33,
+          "actual_nonblank_count": 33,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 33,
+          "label": "Capex"
+        },
+        "26": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D15+D24",
+            "=F15+F24",
+            "=H15+H24"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": true,
+          "forecast_examples": [
+            "=E15+E24",
+            "=G15+G24",
+            "=I15+I24"
+          ],
+          "forecast_formula_count": 58,
+          "forecast_nonblank_count": 58,
+          "label": "Net Burn"
+        },
+        "29": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=P29+R28",
+            "=R29+T28",
+            "=T29+V28"
+          ],
+          "actual_formula_count": 49,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [
+            "=F29+G28"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 58,
+          "label": "No. of Active Corporates"
+        },
+        "30": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=L62",
+            "=N62",
+            "=R62"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 58,
+          "forecast": true,
+          "forecast_examples": [
+            "=AN30*1.1",
+            "=AP30*1.1",
+            "=AS30*1.1"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 57,
+          "label": "Transactions (EWA + Payroll)"
+        },
+        "32": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=T30/S30-1",
+            "=V30/U30-1",
+            "=X30/W30-1"
+          ],
+          "actual_formula_count": 50,
+          "actual_nonblank_count": 50,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Change in Transactions"
+        },
+        "33": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=F15/F14",
+            "=H15/H14",
+            "=J15/J14"
+          ],
+          "actual_formula_count": 57,
+          "actual_nonblank_count": 57,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Revenue as a % of NTV"
+        },
+        "34": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=F14/F30",
+            "=H14/H30",
+            "=J14/J30"
+          ],
+          "actual_formula_count": 57,
+          "actual_nonblank_count": 57,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "NTV/Transaction"
+        },
+        "35": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=F14/F29",
+            "=H14/H29",
+            "=J14/J29"
+          ],
+          "actual_formula_count": 57,
+          "actual_nonblank_count": 57,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "NTV/ Active Corporate"
+        },
+        "36": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=F30/F29",
+            "=H30/H29",
+            "=J30/J29"
+          ],
+          "actual_formula_count": 57,
+          "actual_nonblank_count": 57,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Transaction/Active Corporate"
+        },
+        "37": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=H14/F14-1",
+            "=J14/H14-1",
+            "=L14/J14-1"
+          ],
+          "actual_formula_count": 56,
+          "actual_nonblank_count": 56,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "MoM Change in NTV"
+        },
+        "38": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=H29/F29-1",
+            "=J29/H29-1",
+            "=L29/J29-1"
+          ],
+          "actual_formula_count": 56,
+          "actual_nonblank_count": 56,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "MoM Change in Active Corporates"
+        },
+        "39": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=H34/F34",
+            "=J34/H34",
+            "=L34/J34"
+          ],
+          "actual_formula_count": 56,
+          "actual_nonblank_count": 56,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Growth in NTV/AC transaction (MoM)"
+        },
+        "40": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=(-F26/F14)",
+            "=(-H26/H14)",
+            "=(-J26/J14)"
+          ],
+          "actual_formula_count": 57,
+          "actual_nonblank_count": 57,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Net Burn as a % of NTV"
+        }
+      },
+      "sheet_name": "Abhi Finance"
+    },
+    "bykea": {
+      "display_name": "Bykea",
+      "formula_row_count": 20,
+      "month_columns_found": 63,
+      "rows": {
+        "12": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AVERAGE(BW31,BY31,CA31)",
+            "=AVERAGE(CJ31,CL31,CN31)",
+            "=SUM(EJ18:EJ21)"
+          ],
+          "actual_formula_count": 21,
+          "actual_nonblank_count": 21,
+          "forecast": false,
+          "forecast_examples": [
+            "=AVERAGE(CC31,CE31,CG31)",
+            "=AVERAGE(CP31,CR31,CT31)"
+          ],
+          "forecast_formula_count": 2,
+          "forecast_nonblank_count": 2,
+          "label": ""
+        },
+        "16": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=CJ16*1.15",
+            "=CX16*1.05",
+            "=DB16*1.05"
+          ],
+          "forecast_formula_count": 37,
+          "forecast_nonblank_count": 63,
+          "label": "GTV"
+        },
+        "17": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=BA16*0.13",
+            "=CM16*0.13",
+            "=DA16*0.065"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 63,
+          "label": "Net Revenue"
+        },
+        "22": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AX17:AX21)",
+            "=SUM(AZ17:AZ21)",
+            "=SUM(BB17:BB21)"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AY17:AY21)",
+            "=SUM(BA17:BA21)",
+            "=SUM(BC17:BC21)"
+          ],
+          "forecast_formula_count": 62,
+          "forecast_nonblank_count": 63,
+          "label": "Net Burn"
+        },
+        "24": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=3821649/31"
+          ],
+          "actual_formula_count": 1,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=CB24*0.8",
+            "=CM16/20",
+            "=CW24*0.95"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 63,
+          "label": "Bookings / day"
+        },
+        "25": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=CB25*0.8",
+            "=CM16/40",
+            "=CW25*0.92"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 63,
+          "label": "Net Tranactions/day"
+        },
+        "26": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AX25/AX24",
+            "=AZ25/AZ24",
+            "=BB25/BB24"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AY25/AY24",
+            "=BA25/BA24",
+            "=BC25/BC24"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Fulfilment"
+        },
+        "27": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=CV27*0.95",
+            "=CX27*1.05",
+            "=DB27*1.05"
+          ],
+          "forecast_formula_count": 37,
+          "forecast_nonblank_count": 63,
+          "label": "MAU (Monthly Active Users) Net"
+        },
+        "28": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=CW28*0.99",
+            "=CX28*1.05",
+            "=DB28*1.05"
+          ],
+          "forecast_formula_count": 37,
+          "forecast_nonblank_count": 63,
+          "label": "MAD (Monthly Active Drivers)"
+        },
+        "30": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AX16/(AX24*30)",
+            "=AZ16/(AZ24*30)",
+            "=BB16/(BB24*30)"
+          ],
+          "actual_formula_count": 61,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AY16/(AY24*30)",
+            "=BA16/(BA24*30)",
+            "=BC16/(BC24*30)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Fare / Booking"
+        },
+        "31": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AX22/(AX25*30)",
+            "=AZ22/(AZ25*30)",
+            "=BB22/(BB25*30)"
+          ],
+          "actual_formula_count": 61,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AY22/(AY25*30)",
+            "=BA22/(BA25*30)",
+            "=BC22/(BC25*30)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Burn / Trip"
+        },
+        "35": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AX17:AX21)-AX22",
+            "=SUM(AZ17:AZ21)-AZ22",
+            "=SUM(BB17:BB21)-BB22"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=SUM(AY17:AY21)-AY22"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Check - Net Burn"
+        },
+        "36": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AX17/AX16",
+            "=AZ17/AZ16",
+            "=BB17/BB16"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=AY17/AY16"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Margin"
+        },
+        "37": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AX17/AV17-1",
+            "=AZ17/AX17-1",
+            "=BB17/AZ17-1"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Net Revenue Growth MoM"
+        },
+        "38": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AX25/AV25-1",
+            "=AZ25/AX25-1",
+            "=BB25/AZ25-1"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Trips Growth MoM"
+        },
+        "39": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AX25/AX24",
+            "=AZ25/AZ24",
+            "=BB25/BB24"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=AY25/AY24"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Fulfillment %"
+        },
+        "41": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AX16/(AX25*30)-AX30",
+            "=AZ16/(AZ25*30)-AZ30",
+            "=BB16/(BB25*30)-BB30"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=AY16/(AY25*30)-AY30"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Fare/Trip"
+        },
+        "42": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AX22/(AX25*30)-AX31",
+            "=AZ22/(AZ25*30)-AZ31",
+            "=BB22/(BB25*30)-BB31"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=AY22/(AY25*30)-AY31"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Burn/Trip"
+        },
+        "43": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-AX16/AX18",
+            "=-AZ16/AZ18",
+            "=-BB16/BB18"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=-AY16/AY18"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Return on Driver subsidies"
+        },
+        "44": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-AX16/AX19",
+            "=-AZ16/AZ19",
+            "=-BB16/BB19"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=-AY16/AY19"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Return on marketing"
+        }
+      },
+      "sheet_name": "Bykea"
+    },
+    "dot_and_line": {
+      "display_name": "Dot & Line",
+      "formula_row_count": 35,
+      "month_columns_found": 63,
+      "rows": {
+        "15": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI62",
+            "=BK62",
+            "=BO62"
+          ],
+          "actual_formula_count": 53,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AX15*1.1",
+            "=BT15*0.9",
+            "=CB15*1.05"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 63,
+          "label": "GMV"
+        },
+        "16": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI62+BI63",
+            "=BK62+BK63",
+            "=BO62+BO63"
+          ],
+          "actual_formula_count": 53,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AT15*38%",
+            "=AV15*38%",
+            "=AX15*38%"
+          ],
+          "forecast_formula_count": 45,
+          "forecast_nonblank_count": 63,
+          "label": "Net revenue"
+        },
+        "17": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=384500+160000",
+            "=BI72",
+            "=BK72"
+          ],
+          "actual_formula_count": 40,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=DD17"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 62,
+          "label": "Other revenue"
+        },
+        "18": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BI85",
+            "=BK85",
+            "=BO85"
+          ],
+          "actual_formula_count": 53,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=CN18",
+            "=CP18",
+            "=CR18"
+          ],
+          "forecast_formula_count": 6,
+          "forecast_nonblank_count": 63,
+          "label": "Salaries"
+        },
+        "19": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BI84",
+            "=BK84",
+            "=BO84"
+          ],
+          "actual_formula_count": 53,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=CN19",
+            "=CP19",
+            "=CR19"
+          ],
+          "forecast_formula_count": 5,
+          "forecast_nonblank_count": 63,
+          "label": "SG&A"
+        },
+        "196": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ15/AQ$12",
+            "=AS15/AS$12",
+            "=AU15/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR15/AR$12",
+            "=AT15/AT$12",
+            "=AV15/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "GMV"
+        },
+        "197": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ16/AQ$12",
+            "=AS16/AS$12",
+            "=AU16/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR16/AR$12",
+            "=AT16/AT$12",
+            "=AV16/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net revenue"
+        },
+        "198": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ17/AQ$12",
+            "=AS17/AS$12",
+            "=AU17/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR17/AR$12",
+            "=AT17/AT$12",
+            "=AV17/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Other revenue"
+        },
+        "199": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ18/AQ$12",
+            "=AS18/AS$12",
+            "=AU18/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR18/AR$12",
+            "=AT18/AT$12",
+            "=AV18/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Salaries"
+        },
+        "20": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BI67+BI68+BI78",
+            "=BK67+BK68+BK78",
+            "=BO67+BO68+BO78"
+          ],
+          "actual_formula_count": 53,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [
+            "=DD20"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 63,
+          "label": "Marketing"
+        },
+        "200": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ19/AQ$12",
+            "=AS19/AS$12",
+            "=AU19/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR19/AR$12",
+            "=AT19/AT$12",
+            "=AV19/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "SG&A"
+        },
+        "201": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ20/AQ$12",
+            "=AS20/AS$12",
+            "=AU20/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR20/AR$12",
+            "=AT20/AT$12",
+            "=AV20/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Marketing"
+        },
+        "202": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ21/AQ$12",
+            "=AS21/AS$12",
+            "=AU21/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR21/AR$12",
+            "=AT21/AT$12",
+            "=AV21/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Development"
+        },
+        "203": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ22/AQ$12",
+            "=AS22/AS$12",
+            "=AU22/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR22/AR$12",
+            "=AT22/AT$12",
+            "=AV22/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Other expenses"
+        },
+        "204": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ23/AQ$12",
+            "=AS23/AS$12",
+            "=AU23/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR23/AR$12",
+            "=AT23/AT$12",
+            "=AV23/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "205": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AQ24/AQ$12",
+            "=AS24/AS$12",
+            "=AU24/AU$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AR24/AR$12",
+            "=AT24/AT$12",
+            "=AV24/AV$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net Income (loss)"
+        },
+        "22": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=DU86",
+            "=DW86",
+            "=DY86"
+          ],
+          "actual_formula_count": 22,
+          "actual_nonblank_count": 27,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 14,
+          "label": "Other expenses"
+        },
+        "23": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AQ18:AQ22)",
+            "=SUM(AS18:AS22)",
+            "=SUM(AU18:AU22)"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AR18:AR22)",
+            "=SUM(AT18:AT22)",
+            "=SUM(AV18:AV22)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "24": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AQ16:AQ22)",
+            "=SUM(AS16:AS22)",
+            "=SUM(AU16:AU22)"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AR16:AR22)",
+            "=SUM(AT16:AT22)",
+            "=SUM(AV16:AV22)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net Income (loss)"
+        },
+        "26": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI148",
+            "=BK148",
+            "=BO148"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=BP26*1.2",
+            "=BT26*0.9",
+            "=CB26*0.9"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 63,
+          "label": "Total Students"
+        },
+        "27": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BI151",
+            "=BK151",
+            "=BO151"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 63,
+          "label": "Total Teacher Partners"
+        },
+        "31": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AQ18:AQ22)=AQ23",
+            "=SUM(AS18:AS22)=AS23",
+            "=SUM(AU18:AU22)=AU23"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AR18:AR22)=AR23",
+            "=SUM(AT18:AT22)=AT23",
+            "=SUM(AV18:AV22)=AV23"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "32": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AQ16:AQ22)=AQ24",
+            "=SUM(AS16:AS22)=AS24",
+            "=SUM(AU16:AU22)=AU24"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AR16:AR22)=AR24",
+            "=SUM(AT16:AT22)=AT24",
+            "=SUM(AV16:AV22)=AV24"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net Income"
+        },
+        "33": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BA15/AY15 - 1",
+            "=BC15/BA15 - 1",
+            "=BE15/BC15 - 1"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "GMV Growth (MoM)"
+        },
+        "34": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BA16/AY16 - 1",
+            "=BC16/BA16 - 1",
+            "=BE16/BC16 - 1"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Net revenue Growth (MoM)"
+        },
+        "36": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BA26/AY26 - 1",
+            "=BC26/BA26 - 1",
+            "=BE26/BC26 - 1"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Student Growth (MoM)"
+        },
+        "37": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BA27/AY27 - 1",
+            "=BC27/BA27 - 1",
+            "=BE27/BC27 - 1"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Teacher Growth (MoM)"
+        },
+        "38": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BA15/BA26",
+            "=BC15/BC26",
+            "=BE15/BE26"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "GMV/Student"
+        },
+        "39": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BA15/BA27",
+            "=BC15/BC27",
+            "=BE15/BE27"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "GMV/Teacher"
+        },
+        "40": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-(BA24/AY24-1)",
+            "=-(BC24/BA24-1)",
+            "=-(BE24/BC24-1)"
+          ],
+          "actual_formula_count": 58,
+          "actual_nonblank_count": 58,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Bottom line % change"
+        },
+        "64": {
+          "active_actual_formula_count": 1,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BO62+BO63",
+            "=BQ62+BQ63",
+            "=BS62+BS63"
+          ],
+          "actual_formula_count": 49,
+          "actual_nonblank_count": 53,
+          "forecast": false,
+          "forecast_examples": [
+            "=ET62+ET63"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Gross Revenue"
+        },
+        "70": {
+          "active_actual_formula_count": 1,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=CK64+CK68",
+            "=CM64+CM68",
+            "=CO64+CO68"
+          ],
+          "actual_formula_count": 38,
+          "actual_nonblank_count": 53,
+          "forecast": false,
+          "forecast_examples": [
+            "=ET64+ET68"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Net Revenue from tuition fee"
+        },
+        "75": {
+          "active_actual_formula_count": 1,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=CY70+CY74",
+            "=DA70+DA74",
+            "=SUM(DC70:DC74)"
+          ],
+          "actual_formula_count": 31,
+          "actual_nonblank_count": 53,
+          "forecast": false,
+          "forecast_examples": [
+            "=SUM(ET70:ET74)"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Total Revenue (Net)"
+        },
+        "87": {
+          "active_actual_formula_count": 1,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=CE78+CE84+CE85",
+            "=CG78+CG84+CG85",
+            "=CI78+CI84+CI85"
+          ],
+          "actual_formula_count": 40,
+          "actual_nonblank_count": 53,
+          "forecast": false,
+          "forecast_examples": [
+            "=ET78+ET84+ET85+ET86"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "Total Operating Expenses"
+        },
+        "89": {
+          "active_actual_formula_count": 1,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=BS75+BS87",
+            "=CQ75+CQ87",
+            "=CS75+CS87"
+          ],
+          "actual_formula_count": 35,
+          "actual_nonblank_count": 53,
+          "forecast": false,
+          "forecast_examples": [
+            "=ED75+ED87",
+            "=EF75+EF87",
+            "=EH75+EH87"
+          ],
+          "forecast_formula_count": 4,
+          "forecast_nonblank_count": 4,
+          "label": "Net Income"
+        }
+      },
+      "sheet_name": "Dot & Line"
+    },
+    "jiye_technologies": {
+      "display_name": "Jiye Technologies",
+      "formula_row_count": 22,
+      "month_columns_found": 52,
+      "rows": {
+        "14": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=AO121",
+            "=AQ121",
+            "=AS121"
+          ],
+          "actual_formula_count": 27,
+          "actual_nonblank_count": 33,
+          "forecast": true,
+          "forecast_examples": [
+            "=AV14*1.1",
+            "=AX14*1.1",
+            "=AZ14*1.1"
+          ],
+          "forecast_formula_count": 29,
+          "forecast_nonblank_count": 33,
+          "label": "Net Revenue"
+        },
+        "15": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=I89",
+            "=K89",
+            "=M89"
+          ],
+          "actual_formula_count": 49,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=+H13*(1-H17)",
+            "=U15*1.1",
+            "=AA15*1.05"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 52,
+          "label": "COGS"
+        },
+        "16": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=+C13-C15",
+            "=+E13-E15",
+            "=+G13-G15"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=+D13-D15",
+            "=+F13-F15",
+            "=+H13-H15"
+          ],
+          "forecast_formula_count": 46,
+          "forecast_nonblank_count": 52,
+          "label": "Gross Profit"
+        },
+        "18": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BG172",
+            "=BI172",
+            "=BK172"
+          ],
+          "actual_formula_count": 24,
+          "actual_nonblank_count": 24,
+          "forecast": true,
+          "forecast_examples": [
+            "=BG18*1.1",
+            "=BI18*1.1",
+            "=BK18*1.1"
+          ],
+          "forecast_formula_count": 23,
+          "forecast_nonblank_count": 24,
+          "label": "Other Income"
+        },
+        "21": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=I99",
+            "=K99",
+            "=M99"
+          ],
+          "actual_formula_count": 29,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=J99",
+            "=AF21",
+            "=AH21"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 52,
+          "label": "Tech"
+        },
+        "22": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=I100",
+            "=K100",
+            "=M100"
+          ],
+          "actual_formula_count": 44,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=J100",
+            "=AF22",
+            "=AH22"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 51,
+          "label": "Office Space"
+        },
+        "23": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=I101",
+            "=K101",
+            "=M101"
+          ],
+          "actual_formula_count": 11,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=J101",
+            "=AF23",
+            "=AH23"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 51,
+          "label": "Marketing"
+        },
+        "28": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C20:C27)",
+            "=SUM(E20:E27)",
+            "=SUM(G20:G27)"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(D20:D27)",
+            "=SUM(F20:F27)",
+            "=SUM(H20:H27)"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Total Expenses"
+        },
+        "29": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C16-C28",
+            "=E16-E28",
+            "=G16-G28"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=D16-D28",
+            "=F16-F28",
+            "=H16-H28"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Net Burn"
+        },
+        "43": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=I13",
+            "=K13",
+            "=M13"
+          ],
+          "actual_formula_count": 49,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=N13",
+            "=P13",
+            "=R13"
+          ],
+          "forecast_formula_count": 47,
+          "forecast_nonblank_count": 52,
+          "label": "NMV (USD)"
+        },
+        "44": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=I89+I93",
+            "=K89+K93",
+            "=M89+M93"
+          ],
+          "actual_formula_count": 43,
+          "actual_nonblank_count": 43,
+          "forecast": true,
+          "forecast_examples": [
+            "=AP14",
+            "=AR14",
+            "=AT14"
+          ],
+          "forecast_formula_count": 33,
+          "forecast_nonblank_count": 33,
+          "label": "Net revenue"
+        },
+        "45": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=I15",
+            "=K15",
+            "=M15"
+          ],
+          "actual_formula_count": 49,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=+H43*(1-H47)",
+            "=+J43*(1-J47)",
+            "=+L43*(1-L47)"
+          ],
+          "forecast_formula_count": 50,
+          "forecast_nonblank_count": 52,
+          "label": "COGS"
+        },
+        "46": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=+C43-C45",
+            "=+E43-E45",
+            "=+G43-G45"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=+D43-D45",
+            "=+F43-F45",
+            "=+H43-H45"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Gross Profit"
+        },
+        "47": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=+IFERROR(C46/C43,0)",
+            "=+IFERROR(E46/E43,0)",
+            "=+IFERROR(G46/G43,0)"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=+IFERROR(F46/F43,0)",
+            "=+IFERROR(N46/N43,0)",
+            "=+IFERROR(P46/P43,0)"
+          ],
+          "forecast_formula_count": 48,
+          "forecast_nonblank_count": 52,
+          "label": "Gross Margin"
+        },
+        "48": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=I43-I44",
+            "=K43-K44",
+            "=M43-M44"
+          ],
+          "actual_formula_count": 34,
+          "actual_nonblank_count": 34,
+          "forecast": true,
+          "forecast_examples": [
+            "=BH18",
+            "=BJ18",
+            "=BL18"
+          ],
+          "forecast_formula_count": 24,
+          "forecast_nonblank_count": 24,
+          "label": "Other Income"
+        },
+        "50": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C20",
+            "=E20",
+            "=G20"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=D20",
+            "=F20",
+            "=H20"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Salaries"
+        },
+        "51": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C21",
+            "=E21",
+            "=G21"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=D21",
+            "=F21",
+            "=H21"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Tech"
+        },
+        "52": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=E23",
+            "=G23",
+            "=I23"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=F23",
+            "=H23",
+            "=J23"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 52,
+          "label": "Marketing"
+        },
+        "53": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C26+C25+C24+C22",
+            "=E26+E25+E24+E22",
+            "=G26+G25+G24+G22"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=F26+F25+F24+F22",
+            "=H26+H25+H24+H22",
+            "=J26+J25+J24+J22"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 52,
+          "label": "SG&A"
+        },
+        "54": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=E27",
+            "=G27",
+            "=I27"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=F27",
+            "=H27",
+            "=J27"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 52,
+          "label": "Others"
+        },
+        "55": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C50:C54)",
+            "=SUM(E50:E54)",
+            "=SUM(G50:G54)"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(D50:D54)",
+            "=SUM(F50:F54)",
+            "=SUM(H50:H54)"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Total Expenses"
+        },
+        "56": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C46-C55",
+            "=E46-E55",
+            "=G46-G55"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=D46-D55",
+            "=F46-F55",
+            "=H46-H55"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Net Burn"
+        }
+      },
+      "sheet_name": "Jiye Technologies"
+    },
+    "oladoc": {
+      "display_name": "Oladoc",
+      "formula_row_count": 15,
+      "month_columns_found": 52,
+      "rows": {
+        "16": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=Z16*1.05",
+            "=AB16*1.1",
+            "=AD16*1.05"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 52,
+          "label": "GMV (USD)"
+        },
+        "17": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=Z17*1.05",
+            "=AE16*0.5",
+            "=AD17*1.05"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 52,
+          "label": "NMV (USD)"
+        },
+        "19": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=E19*1.025",
+            "=Z19*1.05",
+            "=AE17*0.13"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 52,
+          "label": "Total Revenue"
+        },
+        "20": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=E20*1.2",
+            "=G20*1.025",
+            "=Z20*1.05"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 52,
+          "label": "Total Cost of Services"
+        },
+        "21": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=D19-D20",
+            "=F19-F20",
+            "=H19-H20"
+          ],
+          "actual_formula_count": 35,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=E19-E20",
+            "=G19-G20",
+            "=I19-I20"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 52,
+          "label": "Gross Profit"
+        },
+        "22": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=B21/B19",
+            "=D21/D19",
+            "=F21/F19"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=C21/C19",
+            "=E21/E19",
+            "=G21/G19"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Gross Margin (%)"
+        },
+        "24": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=AC24",
+            "=AE24",
+            "=AG24"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 52,
+          "label": "Salaries"
+        },
+        "26": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 15,
+          "forecast": true,
+          "forecast_examples": [
+            "=BY26",
+            "=CA26",
+            "=CC26"
+          ],
+          "forecast_formula_count": 14,
+          "forecast_nonblank_count": 15,
+          "label": "Telco - VAS User Acquisition"
+        },
+        "28": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=AC28",
+            "=AE28",
+            "=AG28"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 52,
+          "label": "G&A"
+        },
+        "29": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=AC29",
+            "=AE29",
+            "=AG29"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 52,
+          "label": "Others"
+        },
+        "30": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(B24:B29)",
+            "=SUM(D24:D29)",
+            "=SUM(F24:F29)"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(C24:C29)",
+            "=SUM(E24:E29)",
+            "=SUM(G24:G29)"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Total Expenses"
+        },
+        "31": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=B21+B30",
+            "=D21+D30",
+            "=F21+F30"
+          ],
+          "actual_formula_count": 52,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=C21+C30",
+            "=E21+E30",
+            "=G21+G30"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 52,
+          "label": "Net Burn"
+        },
+        "35": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=D35*1.1",
+            "=L35*1.1",
+            "=N35*1.1"
+          ],
+          "forecast_formula_count": 44,
+          "forecast_nonblank_count": 52,
+          "label": "Total Bookings"
+        },
+        "36": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=D36*1.1",
+            "=L36*1.1",
+            "=O36*1.1"
+          ],
+          "forecast_formula_count": 44,
+          "forecast_nonblank_count": 52,
+          "label": "Billed Bookings (0nline)"
+        },
+        "39": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 52,
+          "forecast": true,
+          "forecast_examples": [
+            "=B39*0.95",
+            "=E39*1.05",
+            "=AD39*1.02"
+          ],
+          "forecast_formula_count": 37,
+          "forecast_nonblank_count": 52,
+          "label": "Total Active Doctors"
+        }
+      },
+      "sheet_name": "Oladoc"
+    },
+    "oneload": {
+      "display_name": "OneLoad",
+      "formula_row_count": 28,
+      "month_columns_found": 51,
+      "rows": {
+        "15": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C13:C14)",
+            "=SUM(E13:E14)",
+            "=SUM(G13:G14)"
+          ],
+          "actual_formula_count": 42,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(D13:D14)",
+            "=SUM(F13:F14)",
+            "=H13+H14"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 51,
+          "label": "GMV - Total"
+        },
+        "16": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 0,
+          "forecast": true,
+          "forecast_examples": [
+            "=BV16*1.01",
+            "=BX16*1.01",
+            "=BZ16*1.01"
+          ],
+          "forecast_formula_count": 15,
+          "forecast_nonblank_count": 15,
+          "label": ""
+        },
+        "19": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C17:C18)",
+            "=SUM(E17:E18)",
+            "=SUM(G17:G18)"
+          ],
+          "actual_formula_count": 42,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(D17:D18)",
+            "=SUM(F17:F18)",
+            "=H17+H18"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 51,
+          "label": "Revenue - Total"
+        },
+        "21": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 0,
+          "forecast": true,
+          "forecast_examples": [
+            "=BV21*1.01",
+            "=BX21*1.01",
+            "=BZ21*1.01"
+          ],
+          "forecast_formula_count": 15,
+          "forecast_nonblank_count": 15,
+          "label": ""
+        },
+        "24": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C22:C23)",
+            "=SUM(E22:E23)",
+            "=SUM(G22:G23)"
+          ],
+          "actual_formula_count": 42,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(D22:D23)",
+            "=SUM(F22:F23)",
+            "=H22+H23"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 51,
+          "label": "COGS - Total"
+        },
+        "25": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 0,
+          "forecast": true,
+          "forecast_examples": [
+            "=BV25*1.01",
+            "=BX25*1.01",
+            "=BZ25*1.01"
+          ],
+          "forecast_formula_count": 15,
+          "forecast_nonblank_count": 15,
+          "label": ""
+        },
+        "26": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C17+C22",
+            "=G17+G22",
+            "=I17+I22"
+          ],
+          "actual_formula_count": 26,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=H17+H22",
+            "=J17+J22",
+            "=N17+N22"
+          ],
+          "forecast_formula_count": 26,
+          "forecast_nonblank_count": 51,
+          "label": "Net Revenue - Digital Merchandise"
+        },
+        "27": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C18+C23",
+            "=G18+G23",
+            "=I18+I23"
+          ],
+          "actual_formula_count": 26,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=H18+H23",
+            "=J18+J23",
+            "=N18+N23"
+          ],
+          "forecast_formula_count": 26,
+          "forecast_nonblank_count": 51,
+          "label": "Net Revenue - Financial Services"
+        },
+        "28": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C26:C27)",
+            "=SUM(E26:E27)",
+            "=SUM(G26:G27)"
+          ],
+          "actual_formula_count": 42,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(D26:D27)",
+            "=SUM(F26:F27)",
+            "=H26+H27"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 51,
+          "label": "Net Revenue - Total"
+        },
+        "35": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C30:C33)",
+            "=SUM(G30:G33)",
+            "=I30+I31+I32+I33"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(F30:F33)",
+            "=H30+H31+H32+H33",
+            "=J30+J31+J32+J33"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 51,
+          "label": "Variable Costs"
+        },
+        "37": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=E28+E35",
+            "=G28+G35",
+            "=I28+I35"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=F28+F35",
+            "=H28+H35",
+            "=J28+J35"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 51,
+          "label": "Gross Profit"
+        },
+        "44": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(G39:G43)",
+            "=I39+I40+I41+I42+I43",
+            "=K39+K40+K41+K42+K43"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(F39:F43)",
+            "=H39+H40+H41+H42+H43",
+            "=J39+J40+J41+J42+J43"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 51,
+          "label": "Total Operating Expenses"
+        },
+        "46": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=E37+E44",
+            "=G37+G44",
+            "=I37+I44"
+          ],
+          "actual_formula_count": 42,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=F37+F44",
+            "=H37+H44",
+            "=J37+J44"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 51,
+          "label": "EBIT"
+        },
+        "61": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C15/C$58",
+            "=E15/E$58",
+            "=G15/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D15/D$58",
+            "=F15/F$58",
+            "=H15/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "GMV - Total"
+        },
+        "62": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C19/C$58",
+            "=E19/E$58",
+            "=G19/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D19/D$58",
+            "=F19/F$58",
+            "=H19/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Revenue - Total"
+        },
+        "63": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C24/C$58",
+            "=E24/E$58",
+            "=G24/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D24/D$58",
+            "=F24/F$58",
+            "=H24/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "COGS - Total"
+        },
+        "64": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C28/C$58",
+            "=E28/E$58",
+            "=G28/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D28/D$58",
+            "=F28/F$58",
+            "=H28/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Net Revenue - Total"
+        },
+        "65": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C35/C$58",
+            "=E35/E$58",
+            "=G35/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D35/D$58",
+            "=F35/F$58",
+            "=H35/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Variable Costs"
+        },
+        "66": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C37/C$58",
+            "=E37/E$58",
+            "=G37/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D37/D$58",
+            "=F37/F$58",
+            "=H37/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Gross Profit"
+        },
+        "67": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C39/C$58",
+            "=E39/E$58",
+            "=G39/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D39/D$58",
+            "=F39/F$58",
+            "=H39/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Salaries"
+        },
+        "68": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(C40+C42)/C$58",
+            "=(E40+E42)/E$58",
+            "=(G40+G42)/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=(D40+D42)/D$58",
+            "=(F40+F42)/F$58",
+            "=(H40+H42)/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "SG&A"
+        },
+        "69": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(C41+C43)/C$58",
+            "=(E41+E43)/E$58",
+            "=(G41+G43)/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=(D41+D43)/D$58",
+            "=(F41+F43)/F$58",
+            "=(H41+H43)/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Other Expenses"
+        },
+        "70": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C44/C$58",
+            "=E44/E$58",
+            "=G44/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D44/D$58",
+            "=F44/F$58",
+            "=H44/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Total Operating Expenses"
+        },
+        "71": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C46/C$58",
+            "=E46/E$58",
+            "=G46/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D46/D$58",
+            "=F46/F$58",
+            "=H46/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "EBIT"
+        },
+        "72": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=C47/C$58",
+            "=E47/E$58",
+            "=G47/G$58"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": true,
+          "forecast_examples": [
+            "=D47/D$58",
+            "=F47/F$58",
+            "=H47/H$58"
+          ],
+          "forecast_formula_count": 51,
+          "forecast_nonblank_count": 51,
+          "label": "Net Burn"
+        },
+        "76": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=C51",
+            "=E51",
+            "=G51"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": false,
+          "forecast_examples": [
+            "=D51",
+            "=F51",
+            "=H51"
+          ],
+          "forecast_formula_count": 3,
+          "forecast_nonblank_count": 51,
+          "label": "Active Retailers"
+        },
+        "77": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(C52:C53)",
+            "=SUM(E52:E53)",
+            "=SUM(G52:G53)"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 51,
+          "forecast": false,
+          "forecast_examples": [
+            "=SUM(D52:D53)",
+            "=SUM(F52:F53)",
+            "=SUM(H52:H53)"
+          ],
+          "forecast_formula_count": 32,
+          "forecast_nonblank_count": 51,
+          "label": "Total No. of Transactions"
+        },
+        "82": {
+          "active_actual_formula_count": 1,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=C64*$B$81",
+            "=E64*$B$81",
+            "=G64*$B$81"
+          ],
+          "actual_formula_count": 13,
+          "actual_nonblank_count": 13,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "=C64*$B$81"
+        }
+      },
+      "sheet_name": "OneLoad"
+    },
+    "procheck": {
+      "display_name": "Procheck",
+      "formula_row_count": 15,
+      "month_columns_found": 63,
+      "rows": {
+        "101": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA16*1000)/AA$12",
+            "=(AC16*1000)/AC$12",
+            "=(AE16*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB16*1000)/AB$12",
+            "=(AD16*1000)/AD$12",
+            "=(AF16*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Revenue (New Lines/Codes)"
+        },
+        "102": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA17*1000)/AA$12",
+            "=(AC17*1000)/AC$12",
+            "=(AE17*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB17*1000)/AB$12",
+            "=(AD17*1000)/AD$12",
+            "=(AF17*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Revenue (Recurring Lines/Codes)"
+        },
+        "103": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA18*1000)/AA$12",
+            "=(AC18*1000)/AC$12",
+            "=(AE18*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB18*1000)/AB$12",
+            "=(AD18*1000)/AD$12",
+            "=(AF18*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Revenue"
+        },
+        "104": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA19*1000)/AA$12",
+            "=(AC19*1000)/AC$12",
+            "=(AE19*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB19*1000)/AB$12",
+            "=(AD19*1000)/AD$12",
+            "=(AF19*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Cost of Sales"
+        },
+        "105": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA20*1000)/AA$12",
+            "=(AC20*1000)/AC$12",
+            "=(AE20*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB20*1000)/AB$12",
+            "=(AD20*1000)/AD$12",
+            "=(AF20*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Gross Margin"
+        },
+        "106": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA21*1000)/AA$12",
+            "=(AC21*1000)/AC$12",
+            "=(AE21*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB21*1000)/AB$12",
+            "=(AD21*1000)/AD$12",
+            "=(AF21*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Salaries"
+        },
+        "107": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA22*1000)/AA$12",
+            "=(AC22*1000)/AC$12",
+            "=(AE22*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB22*1000)/AB$12",
+            "=(AD22*1000)/AD$12",
+            "=(AF22*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "SG&A"
+        },
+        "108": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA23*1000)/AA$12",
+            "=(AC23*1000)/AC$12",
+            "=(AE23*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB23*1000)/AB$12",
+            "=(AD23*1000)/AD$12",
+            "=(AF23*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Software Development Cost"
+        },
+        "109": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA24*1000)/AA$12",
+            "=(AC24*1000)/AC$12",
+            "=(AE24*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB24*1000)/AB$12",
+            "=(AD24*1000)/AD$12",
+            "=(AF24*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Other Expenses"
+        },
+        "110": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA25*1000)/AA$12",
+            "=(AC25*1000)/AC$12",
+            "=(AE25*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB25*1000)/AB$12",
+            "=(AD25*1000)/AD$12",
+            "=(AF25*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "111": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=(AA26*1000)/AA$12",
+            "=(AC26*1000)/AC$12",
+            "=(AE26*1000)/AE$12"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=(AB26*1000)/AB$12",
+            "=(AD26*1000)/AD$12",
+            "=(AF26*1000)/AF$12"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Profit (Loss) / Burn"
+        },
+        "18": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AA16:AA17)",
+            "=SUM(AC16:AC17)",
+            "=SUM(AE16:AE17)"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AB16:AB17)",
+            "=SUM(AD16:AD17)",
+            "=SUM(AF16:AF17)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Revenue"
+        },
+        "20": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA18+AA19",
+            "=AC18+AC19",
+            "=AE18+AE19"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB18+AB19",
+            "=AD18+AD19",
+            "=AF18+AF19"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Gross Margin"
+        },
+        "25": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AA21:AA24)",
+            "=SUM(AC21:AC24)",
+            "=SUM(AE21:AE24)"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AB21:AB24)",
+            "=SUM(AD21:AD24)",
+            "=SUM(AF21:AF24)"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "26": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA20+AA25",
+            "=AC20+AC25",
+            "=AE20+AE25"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB20+AB25",
+            "=AD20+AD25",
+            "=AF20+AF25"
+          ],
+          "forecast_formula_count": 52,
+          "forecast_nonblank_count": 63,
+          "label": "Total Profit (Loss) / Burn"
+        }
+      },
+      "sheet_name": "Procheck"
+    },
+    "revolving_games": {
+      "display_name": "Revolving Games",
+      "formula_row_count": 2,
+      "month_columns_found": 63,
+      "rows": {
+        "21": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=SUM(AO16:AO20)",
+            "=SUM(AQ16:AQ20)",
+            "=SUM(AS16:AS20)"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AP16:AP20)",
+            "=SUM(AR16:AR20)",
+            "=SUM(AT16:AT20)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "22": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [
+            "=AO15+AO21",
+            "=AQ15+AQ21",
+            "=AS15+AS21"
+          ],
+          "actual_formula_count": 51,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AP15+AP21",
+            "=AR15+AR21",
+            "=AT15+AT21"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net Income (loss)"
+        }
+      },
+      "sheet_name": "Revolving Games"
+    },
+    "roomy": {
+      "display_name": "Roomy",
+      "formula_row_count": 14,
+      "month_columns_found": 41,
+      "rows": {
+        "13": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D44",
+            "=F44",
+            "=H44"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=F13*1.025",
+            "=I13*0.75",
+            "=J13*1.05"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 41,
+          "label": "Revenue - Total"
+        },
+        "14": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D51",
+            "=F51",
+            "=H51"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=F14*1.025",
+            "=-K13*0.25",
+            "=-M13*25%"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 41,
+          "label": "Cost of Sales - Total"
+        },
+        "15": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D13+D14",
+            "=F13+F14",
+            "=H13+H14"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=E13+E14",
+            "=G13+G14",
+            "=I13+I14"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 41,
+          "label": "Gross Profit"
+        },
+        "16": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D56",
+            "=-F56",
+            "=-H56"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=-30000",
+            "=-30000",
+            "=-30000"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 41,
+          "label": "Salaries & Wages"
+        },
+        "17": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D57",
+            "=-F57",
+            "=-H57"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=-15000",
+            "=-15000",
+            "=-15000"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 41,
+          "label": "Sales & Marketing"
+        },
+        "18": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-D58",
+            "=-F58",
+            "=-H58"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": false,
+          "forecast_examples": [
+            "=I18",
+            "=K18",
+            "=O18"
+          ],
+          "forecast_formula_count": 5,
+          "forecast_nonblank_count": 41,
+          "label": "Rent & CAM / Renovation Costs"
+        },
+        "19": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D59",
+            "=-F59",
+            "=-H59"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=-50000",
+            "=-50000",
+            "=-50000"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 41,
+          "label": "Admin & General"
+        },
+        "20": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(D16:D19)",
+            "=SUM(F16:F19)",
+            "=SUM(H16:H19)"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(E16:E19)",
+            "=SUM(G16:G19)",
+            "=SUM(I16:I19)"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 41,
+          "label": "Total Operating Expenses"
+        },
+        "21": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D15+D20",
+            "=F15+F20",
+            "=H15+H20"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=E15+E20",
+            "=G15+G20",
+            "=I15+I20"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 41,
+          "label": "Net Burn"
+        },
+        "25": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D67",
+            "=F67",
+            "=H67"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=AI25*0.95",
+            "=AJ25*0.95",
+            "=AL25*0.95"
+          ],
+          "forecast_formula_count": 25,
+          "forecast_nonblank_count": 41,
+          "label": "Total No. of Rooms"
+        },
+        "26": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=F75",
+            "=J75",
+            "=L75"
+          ],
+          "actual_formula_count": 39,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=AI26*0.95",
+            "=AJ26*0.95",
+            "=AL26*0.95"
+          ],
+          "forecast_formula_count": 25,
+          "forecast_nonblank_count": 41,
+          "label": "Operational Rooms"
+        },
+        "27": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=D80",
+            "=F80",
+            "=H80"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 41,
+          "label": "Occupancy %"
+        },
+        "28": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D71",
+            "=F71",
+            "=H71"
+          ],
+          "actual_formula_count": 41,
+          "actual_nonblank_count": 41,
+          "forecast": true,
+          "forecast_examples": [
+            "=AI28*0.95",
+            "=AJ28*0.95",
+            "=AL28*0.95"
+          ],
+          "forecast_formula_count": 25,
+          "forecast_nonblank_count": 41,
+          "label": "ADR"
+        },
+        "8": {
+          "active_actual_formula_count": 1,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(D13,F13)*6",
+            "=SUM(BZ13,BX13,BV13)"
+          ],
+          "actual_formula_count": 2,
+          "actual_nonblank_count": 2,
+          "forecast": false,
+          "forecast_examples": [
+            "=SUM(BT13,BR13,BP13)"
+          ],
+          "forecast_formula_count": 1,
+          "forecast_nonblank_count": 1,
+          "label": "=SUM(D13,F13)*6"
+        }
+      },
+      "sheet_name": "Roomy"
+    },
+    "simpaisa": {
+      "display_name": "SimPaisa",
+      "formula_row_count": 42,
+      "month_columns_found": 63,
+      "rows": {
+        "14": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI234",
+            "=BK234",
+            "=BM234"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB14*1.25",
+            "=BU14*1.1",
+            "=BW14*1.1"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 63,
+          "label": "Wallets GTV"
+        },
+        "15": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI235",
+            "=BK235",
+            "=BM235"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB15*0.9",
+            "=BU15*1.1",
+            "=BW15*1.1"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 63,
+          "label": "Telcos GTV"
+        },
+        "16": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI236",
+            "=BK236",
+            "=BM236"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB16*250%",
+            "=BU16*1.1",
+            "=BW16*1.1"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 63,
+          "label": "Card GTV"
+        },
+        "17": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI237",
+            "=BK237",
+            "=BM237"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 60,
+          "forecast": true,
+          "forecast_examples": [
+            "=BU17*1.1",
+            "=BW17*1.1",
+            "=BY17*1.05"
+          ],
+          "forecast_formula_count": 39,
+          "forecast_nonblank_count": 60,
+          "label": "Disbursements GTV"
+        },
+        "18": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=DS238",
+            "=DU238",
+            "=DW238"
+          ],
+          "actual_formula_count": 15,
+          "actual_nonblank_count": 15,
+          "forecast": true,
+          "forecast_examples": [
+            "=DQ18*0.95",
+            "=DS18*0.95",
+            "=DU18*0.95"
+          ],
+          "forecast_formula_count": 15,
+          "forecast_nonblank_count": 15,
+          "label": "Remittances GTV"
+        },
+        "19": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AA14:AA17)",
+            "=SUM(AC14:AC17)",
+            "=SUM(AE14:AE17)"
+          ],
+          "actual_formula_count": 62,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AB14:AB17)",
+            "=SUM(AD14:AD17)",
+            "=SUM(AF14:AF17)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total GTV"
+        },
+        "22": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI240",
+            "=BK240",
+            "=BM240"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=BZ19*2.3%",
+            "=CB19*2.3%",
+            "=CD19*2.3%"
+          ],
+          "forecast_formula_count": 38,
+          "forecast_nonblank_count": 63,
+          "label": "Net Revenue"
+        },
+        "23": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA22/AA19",
+            "=AC22/AC19",
+            "=AE22/AE19"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB22/AB19",
+            "=AD22/AD19",
+            "=AF22/AF19"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "PublishEx Revenue %"
+        },
+        "239": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AY234:AY237)",
+            "=SUM(BA234:BA237)",
+            "=SUM(BC234:BC237)"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 51,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Total GTV"
+        },
+        "24": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-(7497307+3665092)",
+            "=-BI242",
+            "=-BK242"
+          ],
+          "actual_formula_count": 47,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 63,
+          "label": "Salaries"
+        },
+        "241": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AY240/AY239",
+            "=BA240/BA239",
+            "=BC240/BC239"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 51,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Publishex Revenue %"
+        },
+        "248": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AY242:AY247)",
+            "=SUM(BA242:BA247)",
+            "=SUM(BC242:BC247)"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 51,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Total Expenses"
+        },
+        "249": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AY240-AY248",
+            "=BA240-BA248",
+            "=BC240-BC248"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 51,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Net operating income / (loss)"
+        },
+        "25": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-BI243",
+            "=-BK243",
+            "=-BM243"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 63,
+          "label": "SG&A"
+        },
+        "251": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=AY249+AY250",
+            "=BA249+BA250",
+            "=BC249+BC250"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 51,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 0,
+          "label": "Total income for the period"
+        },
+        "28": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-BI246",
+            "=-BK246",
+            "=-BM246"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 62,
+          "label": "Professional Fees"
+        },
+        "29": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 0,
+          "actual": true,
+          "actual_examples": [
+            "=-BI247",
+            "=-BK247",
+            "=-BM247"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": false,
+          "forecast_examples": [],
+          "forecast_formula_count": 0,
+          "forecast_nonblank_count": 63,
+          "label": "Other expenses"
+        },
+        "30": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AA24:AA29)",
+            "=SUM(AC24:AC29)",
+            "=SUM(AE24:AE29)"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AB24:AB29)",
+            "=SUM(AD24:AD29)",
+            "=SUM(AF24:AF29)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "31": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA22+AA30",
+            "=AC22+AC30",
+            "=AE22+AE30"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB22+AB30",
+            "=AD22+AD30",
+            "=AF22+AF30"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net Income (loss)"
+        },
+        "33": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI270",
+            "=BK270",
+            "=BM270"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AI33*1.1",
+            "=BE33*0.9",
+            "=BQ33*1.1"
+          ],
+          "forecast_formula_count": 42,
+          "forecast_nonblank_count": 63,
+          "label": "Wallet Transactions"
+        },
+        "34": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI271",
+            "=BK271",
+            "=BM271"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AI34*1.1",
+            "=BQ34*1.1",
+            "=BU34*1.1"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 63,
+          "label": "Telco Transactions"
+        },
+        "35": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI272",
+            "=BK272",
+            "=BM272"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AI35*1.1",
+            "=BQ35*1.1",
+            "=BU35*1.1"
+          ],
+          "forecast_formula_count": 41,
+          "forecast_nonblank_count": 63,
+          "label": "Card Transactions"
+        },
+        "36": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=BI273",
+            "=BK273",
+            "=BM273"
+          ],
+          "actual_formula_count": 46,
+          "actual_nonblank_count": 49,
+          "forecast": true,
+          "forecast_examples": [
+            "=BQ36*1.1",
+            "=BU36*1.1",
+            "=BY36*1.1"
+          ],
+          "forecast_formula_count": 40,
+          "forecast_nonblank_count": 49,
+          "label": "Disbursement Transactions"
+        },
+        "37": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(AA33:AA35)",
+            "=AC33+AC34+AC35",
+            "=SUM(AE33:AE35)"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(AB33:AB35)",
+            "=AD33+AD34+AD35",
+            "=SUM(AF33:AF35)"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total No. of Transactions"
+        },
+        "45": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA14/AA$42",
+            "=AC14/$AC$42",
+            "=AE14/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB14/AB$42",
+            "=AD14/AD$42",
+            "=AF14/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Wallets Gtv"
+        },
+        "46": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA15/AA$42",
+            "=AC15/AC42",
+            "=AE15/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB15/AB$42",
+            "=AD15/AD$42",
+            "=AF15/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Telcos GTV"
+        },
+        "47": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA16/AA42",
+            "=AC16/AC42",
+            "=AE16/AE42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB16/AB42",
+            "=AD16/AD42",
+            "=AF16/AF42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Cards GTV"
+        },
+        "48": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AG17/AG42",
+            "=AI17/AI42",
+            "=AK17/AK42"
+          ],
+          "actual_formula_count": 60,
+          "actual_nonblank_count": 60,
+          "forecast": true,
+          "forecast_examples": [
+            "=AH17/AH42",
+            "=AJ17/AJ42",
+            "=AL17/AL42"
+          ],
+          "forecast_formula_count": 60,
+          "forecast_nonblank_count": 60,
+          "label": "Disbursements GTV"
+        },
+        "49": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=DS18/DS$42",
+            "=DU18/DU$42",
+            "=DW18/DW$42"
+          ],
+          "actual_formula_count": 15,
+          "actual_nonblank_count": 15,
+          "forecast": true,
+          "forecast_examples": [
+            "=DT18/DT$42",
+            "=DV18/DV$42",
+            "=DX18/DX$42"
+          ],
+          "forecast_formula_count": 15,
+          "forecast_nonblank_count": 15,
+          "label": "Remittance GTV"
+        },
+        "50": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA19/AA$42",
+            "=AC47+AC46+AC45",
+            "=AE19/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB19/AB$42",
+            "=AD19/AD$42",
+            "=AF19/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total GTV"
+        },
+        "51": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA20/AA$42",
+            "=AE20/AE$42",
+            "=AI20/AI$42"
+          ],
+          "actual_formula_count": 61,
+          "actual_nonblank_count": 61,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB20/AB$42",
+            "=AD20/AD$42",
+            "=AF20/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Telcos Commission"
+        },
+        "52": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA21/AA$42",
+            "=AE21/AE$42",
+            "=AI21/AI$42"
+          ],
+          "actual_formula_count": 61,
+          "actual_nonblank_count": 61,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB21/AB$42",
+            "=AD21/AD$42",
+            "=AF21/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Merchant Gross  Share"
+        },
+        "53": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA22/AA$42",
+            "=AC22/AC42",
+            "=AE22/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB22/AB$42",
+            "=AD22/AD$42",
+            "=AF22/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net Revenue"
+        },
+        "54": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA53/AA50",
+            "=AE53/AE50",
+            "=AG53/AG50"
+          ],
+          "actual_formula_count": 62,
+          "actual_nonblank_count": 62,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB53/AB50",
+            "=AD53/AD50",
+            "=AF53/AF50"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "PublishEx Revenue %"
+        },
+        "55": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA24/AA$42",
+            "=AC24/AC42",
+            "=AE24/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB24/AB$42",
+            "=AD24/AD$42",
+            "=AF24/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Salaries"
+        },
+        "56": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA25/AA$42",
+            "=AC25/AC42",
+            "=AE25/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB25/AB$42",
+            "=AD25/AD$42",
+            "=AF25/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "SG&A"
+        },
+        "57": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA26/AA$42",
+            "=AE26/AE$42",
+            "=AI26/AI$42"
+          ],
+          "actual_formula_count": 57,
+          "actual_nonblank_count": 61,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB26/AB$42",
+            "=AD26/AD$42",
+            "=AF26/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Marketing"
+        },
+        "58": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA27/AA$42",
+            "=AC27/AC42",
+            "=AE27/AE$42"
+          ],
+          "actual_formula_count": 59,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB27/AB$42",
+            "=AD27/AD$42",
+            "=AF27/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Business Development"
+        },
+        "59": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA28/AA$42",
+            "=AC28/AC42",
+            "=AE28/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB28/AB$42",
+            "=AD28/AD$42",
+            "=AF28/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Professional Fees"
+        },
+        "60": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA29/AA$42",
+            "=AC29/AC42",
+            "=AE29/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB29/AB$42",
+            "=AD29/AD$42",
+            "=AF29/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Other expenses"
+        },
+        "61": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA30/AA$42",
+            "=AC30/AC42",
+            "=AE30/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB30/AB$42",
+            "=AD30/AD$42",
+            "=AF30/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Total Expenses"
+        },
+        "62": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=AA31/AA$42",
+            "=AC31/AC42",
+            "=AE31/AE$42"
+          ],
+          "actual_formula_count": 63,
+          "actual_nonblank_count": 63,
+          "forecast": true,
+          "forecast_examples": [
+            "=AB31/AB$42",
+            "=AD31/AD$42",
+            "=AF31/AF$42"
+          ],
+          "forecast_formula_count": 63,
+          "forecast_nonblank_count": 63,
+          "label": "Net Income (loss)"
+        }
+      },
+      "sheet_name": "SimPaisa "
+    },
+    "tapmad": {
+      "display_name": "Tapmad",
+      "formula_row_count": 37,
+      "month_columns_found": 30,
+      "rows": {
+        "10": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D67/D$61",
+            "=F67/F$61",
+            "=H67/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E67/E$61",
+            "=G67/G$61",
+            "=I67/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Tapshop"
+        },
+        "11": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D68/D$61",
+            "=F68/F$61",
+            "=H68/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E68/E$61",
+            "=G68/G$61",
+            "=I68/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Content Syndication"
+        },
+        "13": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D70/D$61",
+            "=F70/F$61",
+            "=H70/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E70/E$61",
+            "=G70/G$61",
+            "=I70/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Distribution Cost"
+        },
+        "14": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D6-D13",
+            "=F6-F13",
+            "=H6-H13"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E6-E13",
+            "=G6-G13",
+            "=I6-I13"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Net Revenue"
+        },
+        "16": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(D17:D19)",
+            "=SUM(F17:F19)",
+            "=SUM(H17:H19)"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(E17:E19)",
+            "=SUM(G17:G19)",
+            "=SUM(I17:I19)"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Cost of Sales & Services"
+        },
+        "17": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D74/D$61",
+            "=F74/F$61",
+            "=H74/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E74/E$61",
+            "=G74/G$61",
+            "=I74/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Customer Acquisition"
+        },
+        "18": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D75/D$61",
+            "=F75/F$61",
+            "=H75/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E75/E$61",
+            "=G75/G$61",
+            "=I75/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Content"
+        },
+        "19": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D76/D$61",
+            "=F76/F$61",
+            "=H76/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E76/E$61",
+            "=G76/G$61",
+            "=I76/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Networking"
+        },
+        "21": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D14-D16",
+            "=F14-F16",
+            "=H14-H16"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E14-E16",
+            "=G14-G16",
+            "=I14-I16"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Gross Profit"
+        },
+        "23": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(D24:D29)",
+            "=SUM(F24:F29)",
+            "=SUM(H24:H29)"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(E24:E29)",
+            "=SUM(G24:G29)",
+            "=SUM(I24:I29)"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "OPEX"
+        },
+        "24": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D81/D$61",
+            "=F81/F$61",
+            "=H81/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E81/E$61",
+            "=G81/G$61",
+            "=I81/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Salaries & Wages (incl. bonuses/perks)"
+        },
+        "25": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D82/D$61",
+            "=F82/F$61",
+            "=H82/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E82/E$61",
+            "=G82/G$61",
+            "=I82/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "SG&A (Rent, utilities, office expenses)"
+        },
+        "26": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D83/D$61",
+            "=F83/F$61",
+            "=H83/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E83/E$61",
+            "=G83/G$61",
+            "=I83/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Marketing"
+        },
+        "27": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D84/D$61",
+            "=F84/F$61",
+            "=H84/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E84/E$61",
+            "=G84/G$61",
+            "=I84/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Professional & consultancy fee"
+        },
+        "28": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D85/D$61",
+            "=F85/F$61",
+            "=H85/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E85/E$61",
+            "=G85/G$61",
+            "=I85/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Travel"
+        },
+        "29": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D86/D$61",
+            "=F86/F$61",
+            "=H86/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E86/E$61",
+            "=G86/G$61",
+            "=I86/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Other expenses"
+        },
+        "31": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D21-D23",
+            "=F14-F16-F23",
+            "=H14-H16-H23"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E14-E16-E23",
+            "=G14-G16-G23",
+            "=I14-I16-I23"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "EBITDA"
+        },
+        "33": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D90/D$61",
+            "=F90/F$61",
+            "=H90/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E90/E$61",
+            "=G90/G$61",
+            "=I90/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "CAPEX"
+        },
+        "35": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D31-D33",
+            "=F31-F33",
+            "=H31-H33"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E31-E33",
+            "=G31-G33",
+            "=I31-I33"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Net Profit / (Loss)"
+        },
+        "39": {
+          "active_actual_formula_count": 0,
+          "active_forecast_formula_count": 3,
+          "actual": false,
+          "actual_examples": [],
+          "actual_formula_count": 0,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=D39*1.01",
+            "=F39*1.01",
+            "=H39*1.01"
+          ],
+          "forecast_formula_count": 29,
+          "forecast_nonblank_count": 29,
+          "label": "Monthly Active Users (MAUs)"
+        },
+        "46": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D6",
+            "=F6",
+            "=H6"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E6",
+            "=G6",
+            "=I6"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C6"
+        },
+        "47": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D6-D13",
+            "=F6-F13",
+            "=H6-H13"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E6-E13",
+            "=G6-G13",
+            "=I6-I13"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C14"
+        },
+        "48": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D16",
+            "=-F16",
+            "=-H16"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=-E16",
+            "=-G16",
+            "=-I16"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C16"
+        },
+        "49": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D24",
+            "=-F24",
+            "=-H24"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=-E24",
+            "=-G24",
+            "=-I24"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C24"
+        },
+        "50": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D25",
+            "=-F25",
+            "=-H25"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=-E25",
+            "=-G25",
+            "=-I25"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C25"
+        },
+        "51": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D26",
+            "=-F26",
+            "=-H26"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=-E26",
+            "=-G26",
+            "=-I26"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C26"
+        },
+        "52": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D27",
+            "=-F27",
+            "=-H27"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=-E27",
+            "=-G27",
+            "=-I27"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C27"
+        },
+        "53": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-SUM(D28,D29)",
+            "=-SUM(F28,F29)",
+            "=-SUM(H28,H29)"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=-SUM(E28,E29)",
+            "=-SUM(G28,G29)",
+            "=-SUM(I28,I29)"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C29"
+        },
+        "54": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(D49:D53)",
+            "=SUM(F49:F53)",
+            "=SUM(H49:H53)"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(E49:E53)",
+            "=SUM(G49:G53)",
+            "=SUM(I49:I53)"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C23"
+        },
+        "55": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=-D33",
+            "=-F33",
+            "=-H33"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=-E33",
+            "=-G33",
+            "=-I33"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C33"
+        },
+        "56": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D47+D48+D54+D55",
+            "=F47+F48+F54+F55",
+            "=H47+H48+H54+H55"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E47+E48+E54+E55",
+            "=G47+G48+G54+G55",
+            "=I47+I48+I54+I55"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C35"
+        },
+        "57": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D38/1000",
+            "=F38/1000",
+            "=H38/1000"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E38/1000",
+            "=G38/1000",
+            "=I38/1000"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C38"
+        },
+        "58": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D39/1000",
+            "=F39/1000",
+            "=H39/1000"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E39/1000",
+            "=G39/1000",
+            "=I39/1000"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "=C39"
+        },
+        "6": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=SUM(D7:D11)",
+            "=SUM(F7:F11)",
+            "=SUM(H7:H11)"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=SUM(E7:E11)",
+            "=SUM(G7:G11)",
+            "=SUM(I7:I11)"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Gross Revenue"
+        },
+        "7": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D64/D$61",
+            "=F64/F$61",
+            "=H64/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E64/E$61",
+            "=G64/G$61",
+            "=I64/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Subscription Revenue (Wallets)"
+        },
+        "8": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D65/D$61",
+            "=F65/F$61",
+            "=H65/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E65/E$61",
+            "=G65/G$61",
+            "=I65/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Subscription Revenue (DCB)"
+        },
+        "9": {
+          "active_actual_formula_count": 3,
+          "active_forecast_formula_count": 3,
+          "actual": true,
+          "actual_examples": [
+            "=D66/D$61",
+            "=F66/F$61",
+            "=H66/H$61"
+          ],
+          "actual_formula_count": 30,
+          "actual_nonblank_count": 30,
+          "forecast": true,
+          "forecast_examples": [
+            "=E66/E$61",
+            "=G66/G$61",
+            "=I66/I$61"
+          ],
+          "forecast_formula_count": 30,
+          "forecast_nonblank_count": 30,
+          "label": "Advertisement"
+        }
+      },
+      "sheet_name": "Tapmad"
+    }
+  },
+  "generated_at": "2026-07-06T15:25:52",
+  "months_scanned": [
+    "2021-01",
+    "2021-02",
+    "2021-03",
+    "2021-04",
+    "2021-05",
+    "2021-06",
+    "2021-07",
+    "2021-08",
+    "2021-09",
+    "2021-10",
+    "2021-11",
+    "2021-12",
+    "2022-01",
+    "2022-02",
+    "2022-03",
+    "2022-04",
+    "2022-05",
+    "2022-06",
+    "2022-07",
+    "2022-08",
+    "2022-09",
+    "2022-10",
+    "2022-11",
+    "2022-12",
+    "2023-01",
+    "2023-02",
+    "2023-03",
+    "2023-04",
+    "2023-05",
+    "2023-06",
+    "2023-07",
+    "2023-08",
+    "2023-09",
+    "2023-10",
+    "2023-11",
+    "2023-12",
+    "2024-01",
+    "2024-02",
+    "2024-03",
+    "2024-04",
+    "2024-05",
+    "2024-06",
+    "2024-07",
+    "2024-08",
+    "2024-09",
+    "2024-10",
+    "2024-11",
+    "2024-12",
+    "2025-01",
+    "2025-02",
+    "2025-03",
+    "2025-04",
+    "2025-05",
+    "2025-06",
+    "2025-07",
+    "2025-08",
+    "2025-09",
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03"
+  ],
+  "source_workbook": "Inputs/Q1'26 KPIs/_Monthly reporting Mar 26 (1).xlsx",
+  "version": 1
+}

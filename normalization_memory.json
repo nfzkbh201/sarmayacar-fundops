@@ -1,0 +1,30 @@
+{
+  "aliases": {},
+  "history": [
+    {
+      "actual_sheet_name": "HPR Format FY-25",
+      "approved_at": "2026-07-07T13:53:54",
+      "confidence": 85,
+      "expected_sheet_name": "sheet1",
+      "previous_actual_sheet_name": null,
+      "profile": "simpaisa"
+    },
+    {
+      "actual_sheet_name": "2. Historical Performance",
+      "approved_at": "2026-07-20T15:11:18",
+      "confidence": 85,
+      "expected_sheet_name": "2022-2025",
+      "previous_actual_sheet_name": null,
+      "profile": "oladoc"
+    }
+  ],
+  "sheet_aliases": {
+    "oladoc": {
+      "2022-2025": "2. Historical Performance"
+    },
+    "simpaisa": {
+      "sheet1": "HPR Format FY-25"
+    }
+  },
+  "version": 1
+}
