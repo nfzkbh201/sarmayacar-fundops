@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import streamlit as st
 import pandas as pd
@@ -903,7 +904,22 @@ with capital_calls_tab:
                     output_path = batch_output_dir / output_filename
                     doc.save(output_path)
 
-                st.success(f"Generated {len(selected_investors)} Word notices in {batch_output_dir}.")
+                notice_files = sorted(batch_output_dir.glob("*.docx"))
+                zip_buffer = BytesIO()
+                with ZipFile(zip_buffer, "w", ZIP_DEFLATED) as zip_file:
+                    for notice_file in notice_files:
+                        zip_file.write(notice_file, arcname=notice_file.name)
+                zip_buffer.seek(0)
+                zip_filename = f"Capital Call Notices - {filename_period}.zip"
+
+                st.success(f"Generated {len(notice_files)} Word notices.")
+                st.download_button(
+                    "Download generated notices",
+                    data=zip_buffer.getvalue(),
+                    file_name=zip_filename,
+                    mime="application/zip",
+                    width="stretch",
+                )
 
 
 with distribution_notices_tab:
