@@ -377,6 +377,7 @@ with capital_calls_tab:
             "Yumna Motiwala": "Yumna Jabbar Motiwala",
             "Nasser Ahmad": "Nasser Aziz Ahmad",
             "GP": "Sarmayacar BV",
+            "Aasia Ilmas": "Harris Khalid Aslam (Previously; Aasia Ilmas)",
             "Fuya Holding GmbH": "Yassir Pasha (Previously Fuya Holding GmbH)",
             "Ahmed S. Hameed (RUKS Trust)": "RUKS International Trust",
             "Aleem Siddiqi": "Aleem Hisam Siddiqi",
@@ -397,12 +398,14 @@ with capital_calls_tab:
             "Michael Schernthaner (Pure Performance GmbH)": "Pure Performance GmbH",
             "Oldcastle Limited": "Oldcastle Limited (Mario Altenburger)",
             "Soofian Zuberi": "Soofian J Zuberi",
+            "The Rizvi Family Trust": "Ahmed Shehreyar Hameed (Previously; The Rizvi Family Trust)",
         }
 
         manual_contact_name_map = {
             "Aleem Siddiqi": "Aleem Hisam Siddiqi",
             "Ali Almakky": "Ali Omar Almakky",
             "Andreas Tuczka (The Aldridge Trust)": "The Aldridge Trust",
+            "Ahmed S. Hameed (RUKS Trust)": "RUKS International Trust",
             "Bancroft Ventures LLC": "Bancroft Ventures LLC (Ahmed Saeed Chaudhary)",
             "Cedric Koehler": "Cedric Sebastian Kohler",
             "Faisal": "Faisal Aziz Essa",
@@ -416,13 +419,58 @@ with capital_calls_tab:
             "Kishmish Ventures": "Kishmish Ventures ApS",
             "L4 Invest GmbH (Markus Pernusch)": "L4 Invest GmbH",
             "Lucky Group": "GrandCres Investment Ltd",
-            "Magdalena Beirder": "Magdalena Biereder",
+            "Magdalena Beirder": "Magdalena Beireder",
             "Michael Schernthaner (Pure Performance GmbH)": "Pure Performance GmbH",
             "Mohammad Kashif Rehman": "Muhammad Kashif Rehman",
+            "Oldcastle Limited": "Oldcastle Limited (Mario Altenburger)",
             "Soofian Zuberi": "Soofian J Zuberi",
-            "The Rizvi Family Trust": "The Rizvi Family Trust (Hasan Ghulam Rizvi)",
+            "The Rizvi Family Trust": "The Rizvi Family Trust",
             "Yumna Motiwala": "Yumna Jabbar Motiwala",
         }
+
+        phase_4_columns = []
+        for col in drawdown_df.columns:
+            phase_values = drawdown_df[col].astype(str).str.strip().str.lower()
+            if (phase_values == "phase 4").any():
+                phase_4_columns.append(col)
+
+        if phase_4_columns:
+            phase_4_col = phase_4_columns[0]
+            drawdown_to_investor_name_map = {
+                str(value).strip(): str(key).strip()
+                for key, value in manual_drawdown_name_map.items()
+            }
+            phase_4_drawdown_names = (
+                drawdown_df.loc[
+                    drawdown_df[phase_4_col].astype(str).str.strip().str.lower() == "phase 4",
+                    "Limited Partner",
+                ]
+                .dropna()
+                .astype(str)
+                .str.strip()
+                .tolist()
+            )
+            phase_4_investor_names = []
+            unmatched_phase_4_names = []
+            for drawdown_name in phase_4_drawdown_names:
+                investor_name = drawdown_to_investor_name_map.get(drawdown_name, drawdown_name)
+                if investor_name in investor_names:
+                    phase_4_investor_names.append(investor_name)
+                elif drawdown_name in investor_names:
+                    phase_4_investor_names.append(drawdown_name)
+                else:
+                    unmatched_phase_4_names.append(drawdown_name)
+
+            phase_4_investor_names = list(dict.fromkeys(phase_4_investor_names))
+            st.caption(f"Found {len(phase_4_investor_names)} Phase 4 investor(s) in the drawdown file.")
+            if st.button("Select Phase 4 Investors"):
+                st.session_state["selected_investors"] = phase_4_investor_names
+                st.rerun()
+            if unmatched_phase_4_names:
+                st.warning(
+                    "These Phase 4 drawdown names were not found in the Investor Master: "
+                    + ", ".join(unmatched_phase_4_names)
+                )
 
         if selected_investors:
             st.subheader("Selected Investor Drawdown Match Preview")
@@ -629,6 +677,21 @@ with capital_calls_tab:
                     tbl_ind.set(qn("w:w"), str(indent_twips))
                     tbl_ind.set(qn("w:type"), "dxa")
 
+                def to_float(value):
+                    try:
+                        s = str(value).replace("$", "").replace(",", "").replace("%", "").strip()
+                        if s == "" or s.lower() == "nan":
+                            return None
+                        return float(s)
+                    except Exception:
+                        return None
+
+                def fmt_notice_money(value, decimals=2):
+                    num = to_float(value)
+                    if num is None:
+                        return ""
+                    return "US $ {:,.{}f}".format(num, decimals)
+
                 def add_drawdown_table(doc, row):
                     from docx.shared import Pt, Inches, RGBColor
                     from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
@@ -664,15 +727,13 @@ with capital_calls_tab:
                             return ""
                         return "$ {:,.{}f}".format(num, decimals)
 
-                    def fmt_percent(value):
+                    def fmt_percent(value, decimals=0):
                         num = to_float(value)
                         if num is None:
                             return ""
-                        if num <= 1:
+                        if abs(num) <= 1:
                             num *= 100
-                        if 0 < abs(num) < 1:
-                            return f"{num:.2f}%"
-                        return f"{num:.0f}%"
+                        return f"{num:,.{decimals}f}%"
 
                     limited_partner = get_value(row, ["Limited Partner", "Drawdown Name", "Investor"])
                     total_commitment = get_value(row, ["Total Commitment"])
@@ -681,6 +742,7 @@ with capital_calls_tab:
                     amount_prev = get_value(row, [
                         "Amount Previously Drawn of Total Commitment",
                         "Amount Previously Drawn",
+                        "Amount  Previously Drawn",
                         "Previously Drawn",
                         "Previous Drawdown",
                         "Amount Previously Drawn of Total\nCommitment",
@@ -736,12 +798,12 @@ with capital_calls_tab:
                     values = [
                         str(limited_partner),
                         fmt_money(total_commitment, 0),
-                        fmt_percent(pro_rata),
+                        fmt_percent(pro_rata, 2),
                         fmt_money(amount_prev, 0),
-                        fmt_percent(percent_prev),
+                        fmt_percent(percent_prev, 0),
                         fmt_money(current_drawdown, 2),
                         fmt_money(total_amount, 0),
-                        fmt_percent(total_percent),
+                        fmt_percent(total_percent, 1),
                     ]
 
                     width_inches = [1.00, 0.75, 0.75, 0.85, 1.05, 0.80, 0.85, 0.60]
@@ -856,8 +918,7 @@ with capital_calls_tab:
                     address = contact_row.get("Postal Address", "")
                     payment_ref = inv_row.get("Payment_Reference", "A0007713")
 
-                    current_drawdown = float(draw_row["Current Drawdown"])
-                    amount_text = f'US $ {current_drawdown:,.0f}'
+                    amount_text = fmt_notice_money(draw_row["Current Drawdown"], 2)
 
                     doc = make_document(uploaded_template_file, template_file)
 
