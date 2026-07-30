@@ -24,9 +24,11 @@ from monthly_reporting_automation import (
     INACTIVE_COMPANIES,
     PENDING_COMPANIES,
     PROFILES,
+    find_month_columns,
     run_batch_update,
     validate_kpi_file,
     validate_template_file,
+    workbook_sheet_name,
 )
 from normalization_memory import (
     list_memory_entries,
@@ -221,6 +223,462 @@ def _rows_to_csv(rows: list[dict[str, object]]) -> bytes:
     return buffer.getvalue().encode("utf-8")
 
 
+QOQ_METHOD_MANUAL = "Manual workbook rules"
+QOQ_RULE_QUARTER_TOTAL = "quarter_total"
+QOQ_RULE_ENDING_VALUE = "ending_value"
+
+
+def _manual_qoq_rule(
+    method: str,
+    source_rows: tuple[int, ...] | None = None,
+    note: str | None = None,
+) -> dict[str, object]:
+    return {
+        "method": method,
+        "source_rows": source_rows,
+        "note": note,
+    }
+
+
+QOQ_MANUAL_RULES: dict[str, dict[int, dict[str, object]]] = {
+    "abhi": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(14, 29)},
+        30: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE),
+    },
+    "simpaisa": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(45, 69)},
+    },
+    "bykea": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(16, 24)},
+        **{row: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE) for row in range(24, 29)},
+    },
+    "dot_and_line": {
+        15: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL),
+        16: _manual_qoq_rule(
+            QOQ_RULE_QUARTER_TOTAL,
+            source_rows=(16, 17),
+            note="Dec 25 manual formula combines Net revenue and Other revenue.",
+        ),
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(17, 26)},
+        27: _manual_qoq_rule(
+            QOQ_RULE_ENDING_VALUE,
+            source_rows=(26,),
+            note="Dec 25 manual formula displays row 27 but compares row 26.",
+        ),
+    },
+    "procheck": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(16, 29)},
+    },
+    "roomy": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(13, 25)},
+        **{row: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE) for row in range(25, 29)},
+    },
+    "oladoc": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(16, 38)},
+        38: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE),
+        39: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE),
+    },
+    "tapmad": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(46, 57)},
+        57: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE),
+        58: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE),
+    },
+    "jiye_technologies": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(13, 30)},
+    },
+    "oneload": {
+        **{row: _manual_qoq_rule(QOQ_RULE_QUARTER_TOTAL) for row in range(61, 78)},
+        76: _manual_qoq_rule(QOQ_RULE_ENDING_VALUE),
+    },
+}
+
+
+def _previous_quarter_months(months: tuple[tuple[int, int], ...]) -> tuple[tuple[int, int], ...]:
+    if not months:
+        return ()
+
+    first_year, first_month = months[0]
+    previous_end_month = first_month - 1
+    previous_end_year = first_year
+    if previous_end_month == 0:
+        previous_end_month = 12
+        previous_end_year -= 1
+    return _quarter_months((previous_end_year, previous_end_month))
+
+
+def _quarter_label(months: tuple[tuple[int, int], ...]) -> str:
+    return ", ".join(f"{month_abbr[month]} {str(year)[-2:]}" for year, month in months)
+
+
+def _number_value(value: object) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if not isinstance(value, str):
+        return None
+
+    text = value.strip()
+    if not text or text.lower() in {"nan", "-", "n/a", "na"}:
+        return None
+    negative = text.startswith("(") and text.endswith(")")
+    text = text.strip("()")
+    is_percent = "%" in text
+    text = (
+        text.replace("$", "")
+        .replace("PKR", "")
+        .replace("USD", "")
+        .replace(",", "")
+        .replace("%", "")
+        .strip()
+    )
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    if negative:
+        number *= -1
+    if is_percent:
+        number /= 100
+    return number
+
+
+def _row_label(sheet, row: int) -> str:
+    labels = []
+    for col in range(1, min(8, sheet.max_column) + 1):
+        value = sheet.cell(row=row, column=col).value
+        if isinstance(value, str):
+            text = " ".join(value.split())
+            if text:
+                labels.append(text)
+    if not labels:
+        return ""
+    return labels[-1]
+
+
+def _auto_qoq_method(metric_label: str) -> str:
+    label = metric_label.lower()
+    if any(token in label for token in ("%", "margin", "rate", "ratio", "yield", "mdr", "take rate")):
+        return "Quarter average"
+    if any(token in label for token in ("/ day", "per day", "/day", "daily", "average", "avg")):
+        return "Quarter average"
+    if any(token in label for token in ("monthly active", "mau", "mad", "active users", "active drivers")):
+        return "Quarter ending value"
+    if "transaction" in label or "revenue" in label or "gmv" in label or "gtv" in label or "nmv" in label:
+        return "Quarter total"
+    ending_tokens = (
+        "cash",
+        "balance",
+        "runway",
+        "assets",
+        "liabilities",
+        "equity",
+        "portfolio",
+        "loan book",
+        "deposits",
+        "headcount",
+        "users",
+        "clients",
+        "merchants",
+        "captains",
+        "corporates",
+        "stores",
+    )
+    if any(token in label for token in ending_tokens):
+        return "Quarter ending value"
+    return "Quarter total"
+
+
+def _aggregate_qoq_values(values: list[float], method: str) -> float | None:
+    clean_values = [value for value in values if value is not None]
+    if not clean_values:
+        return None
+    if method == "Quarter average":
+        return sum(clean_values) / len(clean_values)
+    if method == "Quarter ending value":
+        return clean_values[-1]
+    return sum(clean_values)
+
+
+def _qoq_percent(current_total: float, previous_total: float) -> float | None:
+    if previous_total == 0:
+        return None
+    return (current_total / previous_total - 1) * 100
+
+
+def _qoq_values_for_rows(
+    sheet,
+    source_rows: tuple[int, ...],
+    month_columns: dict[tuple[int, int], int],
+    months: tuple[tuple[int, int], ...],
+) -> list[float]:
+    values: list[float] = []
+    for source_row in source_rows:
+        for month in months:
+            column = month_columns.get(month)
+            if column is None:
+                continue
+            value = _number_value(sheet.cell(row=source_row, column=column).value)
+            if value is not None:
+                values.append(value)
+    return values
+
+
+def _qoq_formula_description(rule_method: str) -> str:
+    if rule_method == QOQ_RULE_ENDING_VALUE:
+        return "Current quarter-end / previous quarter-end - 1"
+    return "Current quarter total / previous quarter total - 1"
+
+
+def _manual_qoq_rows_for_profile(
+    sheet,
+    profile_name: str,
+    current_cols: dict[tuple[int, int], int],
+    previous_cols: dict[tuple[int, int], int],
+    months: tuple[tuple[int, int], ...],
+    previous_months: tuple[tuple[int, int], ...],
+) -> list[dict[str, object]]:
+    profile = PROFILES[profile_name]
+    profile_rules = QOQ_MANUAL_RULES.get(profile_name, {})
+    rows: list[dict[str, object]] = []
+
+    for row_index, rule in profile_rules.items():
+        metric = _row_label(sheet, row_index)
+        if not metric or metric.lower() in {"actual", "forecast", "source: company information", "kpis"}:
+            continue
+
+        source_rows = rule.get("source_rows") or (row_index,)
+        source_rows = tuple(int(row) for row in source_rows)
+        rule_method = str(rule["method"])
+        formula = _qoq_formula_description(rule_method)
+
+        if rule_method == QOQ_RULE_ENDING_VALUE:
+            current_months = months[-1:]
+            previous_months_for_calc = previous_months[-1:]
+            method_label = "Manual: quarter-end month"
+        else:
+            current_months = months
+            previous_months_for_calc = previous_months
+            method_label = "Manual: quarter total"
+
+        current_values = _qoq_values_for_rows(sheet, source_rows, current_cols, current_months)
+        previous_values = _qoq_values_for_rows(sheet, source_rows, previous_cols, previous_months_for_calc)
+        if not current_values and not previous_values:
+            continue
+
+        current_total = sum(current_values) if current_values else None
+        previous_total = sum(previous_values) if previous_values else None
+        if current_total is None or previous_total is None:
+            qoq_pct = None
+            change = None
+        else:
+            change = current_total - previous_total
+            qoq_pct = _qoq_percent(current_total, previous_total)
+
+        rows.append(
+            {
+                "Company": profile.display_name,
+                "Row": row_index,
+                "Source rows": ", ".join(str(row) for row in source_rows),
+                "Metric": metric,
+                "Method": method_label,
+                "Formula": formula,
+                "Current quarter": current_total,
+                "Previous quarter": previous_total,
+                "Change": change,
+                "QoQ %": qoq_pct,
+            }
+        )
+
+    return rows
+
+
+def _qoq_rows_for_workbook(
+    workbook_path: Path,
+    months: tuple[tuple[int, int], ...],
+    selected_profile_names: list[str],
+    calculation_method: str,
+) -> tuple[list[dict[str, object]], list[str]]:
+    previous_months = _previous_quarter_months(months)
+    warnings: list[str] = []
+    rows: list[dict[str, object]] = []
+
+    workbook = load_workbook(workbook_path, data_only=True)
+    try:
+        for profile_name in selected_profile_names:
+            profile = PROFILES[profile_name]
+            actual_sheet_name = workbook_sheet_name(workbook, profile.report_sheet)
+            if actual_sheet_name is None:
+                warnings.append(f"{profile.display_name}: sheet not found.")
+                continue
+
+            sheet = workbook[actual_sheet_name]
+            current_cols = find_month_columns(sheet, months, header_search_rows=30)
+            previous_cols = find_month_columns(sheet, previous_months, header_search_rows=30)
+            missing_current = [month for month in months if month not in current_cols]
+            missing_previous = [month for month in previous_months if month not in previous_cols]
+            if missing_current:
+                warnings.append(f"{profile.display_name}: current quarter columns missing for {_quarter_label(tuple(missing_current))}.")
+            if missing_previous:
+                warnings.append(f"{profile.display_name}: previous quarter columns missing for {_quarter_label(tuple(missing_previous))}.")
+            if len(current_cols) == 0 or len(previous_cols) == 0:
+                continue
+
+            if calculation_method == QOQ_METHOD_MANUAL:
+                if profile_name not in QOQ_MANUAL_RULES:
+                    warnings.append(
+                        f"{profile.display_name}: no manual QoQ formula rules were found in the Dec 25 sample workbook."
+                    )
+                    continue
+
+                rows.extend(
+                    _manual_qoq_rows_for_profile(
+                        sheet=sheet,
+                        profile_name=profile_name,
+                        current_cols=current_cols,
+                        previous_cols=previous_cols,
+                        months=months,
+                        previous_months=previous_months,
+                    )
+                )
+                continue
+
+            for row_index in range(1, sheet.max_row + 1):
+                metric = _row_label(sheet, row_index)
+                if not metric or metric.lower() in {"actual", "forecast", "source: company information"}:
+                    continue
+
+                current_values = [
+                    _number_value(sheet.cell(row=row_index, column=current_cols[month]).value)
+                    for month in months
+                    if month in current_cols
+                ]
+                previous_values = [
+                    _number_value(sheet.cell(row=row_index, column=previous_cols[month]).value)
+                    for month in previous_months
+                    if month in previous_cols
+                ]
+                if not any(value is not None for value in current_values):
+                    continue
+                if not any(value is not None for value in previous_values):
+                    continue
+
+                row_method = _auto_qoq_method(metric) if calculation_method == "Auto" else calculation_method
+                current_total = _aggregate_qoq_values(current_values, row_method)
+                previous_total = _aggregate_qoq_values(previous_values, row_method)
+                if current_total is None or previous_total is None:
+                    continue
+
+                change = current_total - previous_total
+                qoq_pct = _qoq_percent(current_total, previous_total)
+
+                rows.append(
+                    {
+                        "Company": profile.display_name,
+                        "Row": row_index,
+                        "Source rows": str(row_index),
+                        "Metric": metric,
+                        "Method": row_method,
+                        "Formula": "Selected method current / previous - 1",
+                        "Current quarter": current_total,
+                        "Previous quarter": previous_total,
+                        "Change": change,
+                        "QoQ %": qoq_pct,
+                    }
+                )
+    finally:
+        workbook.close()
+
+    return rows, warnings
+
+
+def _render_qoq_calculator(selected_months: tuple[tuple[int, int], ...]) -> None:
+    with st.container(border=True):
+        st.subheader("QoQ changes")
+        st.caption("Upload a completed Monthly Reporting workbook to calculate company-by-company quarter-over-quarter changes.")
+
+        qoq_file = st.file_uploader(
+            "Completed Monthly Reporting workbook",
+            type=["xlsx"],
+            key="qoq_completed_workbook",
+        )
+
+        qoq_cols = st.columns([1, 2])
+        with qoq_cols[0]:
+            calculation_method = st.selectbox(
+                "Calculation method",
+                options=[
+                    QOQ_METHOD_MANUAL,
+                    "Auto",
+                    "Quarter total",
+                    "Quarter average",
+                    "Quarter ending value",
+                ],
+                index=0,
+                help="Manual workbook rules uses the row-by-row QoQ formulas from the Dec 25 manually prepared report. Auto remains available for exploratory checks.",
+            )
+        with qoq_cols[1]:
+            profile_options = list(PROFILES.keys())
+            selected_profile_names = st.multiselect(
+                "Companies",
+                options=profile_options,
+                default=profile_options,
+                format_func=lambda profile_name: PROFILES[profile_name].display_name,
+            )
+
+        current_label = _quarter_label(selected_months)
+        previous_label = _quarter_label(_previous_quarter_months(selected_months))
+        st.caption(f"Comparing {current_label} against {previous_label}.")
+
+        calculate_qoq = st.button(
+            "Calculate QoQ changes",
+            disabled=qoq_file is None or not selected_profile_names,
+            width="stretch",
+        )
+        if not calculate_qoq:
+            return
+
+        with tempfile.TemporaryDirectory() as tmp:
+            workbook_path = Path(tmp) / "completed_monthly_reporting.xlsx"
+            _save_upload(qoq_file, workbook_path)
+            with st.spinner("Calculating QoQ changes"):
+                qoq_rows, warnings = _qoq_rows_for_workbook(
+                    workbook_path=workbook_path,
+                    months=selected_months,
+                    selected_profile_names=selected_profile_names,
+                    calculation_method=calculation_method,
+                )
+
+        if warnings:
+            with st.expander("QoQ warnings", expanded=False):
+                for warning in warnings:
+                    st.warning(warning)
+
+        if not qoq_rows:
+            st.info("No comparable QoQ rows were found for the selected companies and quarter.")
+            return
+
+        st.success(f"Calculated {len(qoq_rows):,} QoQ rows.")
+        st.dataframe(
+            qoq_rows,
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "Current quarter": st.column_config.NumberColumn(format="%.2f"),
+                "Previous quarter": st.column_config.NumberColumn(format="%.2f"),
+                "Change": st.column_config.NumberColumn(format="%.2f"),
+                "QoQ %": st.column_config.NumberColumn(format="%.1f%%"),
+            },
+        )
+        st.download_button(
+            "Download QoQ changes CSV",
+            data=_rows_to_csv(qoq_rows),
+            file_name=f"QoQ Changes {month_abbr[selected_months[-1][1]]} {str(selected_months[-1][0])[-2:]}.csv",
+            mime="text/csv",
+            width="stretch",
+        )
+
+
 def _render_latest_outputs() -> None:
     rows = _latest_output_rows()
     with st.expander("Latest generated files", expanded=False):
@@ -322,6 +780,8 @@ def render_monthly_reporting_page() -> None:
             st.info("Once the Drive folder is connected, the next step is auto-detecting the template and company KPI files from this folder, then saving the generated report back online.")
             _render_latest_outputs()
             return
+
+    _render_qoq_calculator(selected_months)
 
     with st.container(border=True):
         st.subheader("Template")

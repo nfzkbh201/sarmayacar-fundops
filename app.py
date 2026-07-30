@@ -379,7 +379,7 @@ with capital_calls_tab:
             "GP": "Sarmayacar BV",
             "Aasia Ilmas": "Harris Khalid Aslam (Previously; Aasia Ilmas)",
             "Fuya Holding GmbH": "Yassir Pasha (Previously Fuya Holding GmbH)",
-            "Ahmed S. Hameed (RUKS Trust)": "RUKS International Trust",
+            "Ahmed S. Hameed (RUKS Trust)": "Ahmed Shehreyar Hameed (Previously; RUKS International Trust)",
             "Aleem Siddiqi": "Aleem Hisam Siddiqi",
             "Ali Almakky": "Ali Omar Almakky",
             "Andreas Tuczka (The Aldridge Trust)": "The Aldridge Trust",
@@ -398,7 +398,7 @@ with capital_calls_tab:
             "Michael Schernthaner (Pure Performance GmbH)": "Pure Performance GmbH",
             "Oldcastle Limited": "Oldcastle Limited (Mario Altenburger)",
             "Soofian Zuberi": "Soofian J Zuberi",
-            "The Rizvi Family Trust": "Ahmed Shehreyar Hameed (Previously; The Rizvi Family Trust)",
+            "The Rizvi Family Trust": "The Rizvi Family Trust",
         }
 
         manual_contact_name_map = {
@@ -426,6 +426,11 @@ with capital_calls_tab:
             "Soofian Zuberi": "Soofian J Zuberi",
             "The Rizvi Family Trust": "The Rizvi Family Trust",
             "Yumna Motiwala": "Yumna Jabbar Motiwala",
+        }
+
+        manual_notice_display_name_map = {
+            "Ahmed S. Hameed (RUKS Trust)": "RUKS International Trust",
+            "The Rizvi Family Trust": "The Rizvi Family Trust",
         }
 
         phase_4_columns = []
@@ -480,7 +485,7 @@ with capital_calls_tab:
             for investor in selected_investors:
                 clean_investor = investor.strip()
                 drawdown_name = manual_drawdown_name_map.get(clean_investor, clean_investor)
-                notice_display_name = drawdown_name
+                notice_display_name = manual_notice_display_name_map.get(clean_investor, drawdown_name)
 
                 match = drawdown_df[
                     drawdown_df["Limited Partner"].astype(str).str.strip() == drawdown_name
@@ -519,7 +524,7 @@ with capital_calls_tab:
             for investor in selected_investors:
                 clean_investor = investor.strip()
                 drawdown_name = manual_drawdown_name_map.get(clean_investor, clean_investor)
-                notice_display_name = drawdown_name
+                notice_display_name = manual_notice_display_name_map.get(clean_investor, drawdown_name)
 
                 investor_match = investor_df[
                     investor_df["Limited Partner"].astype(str).str.strip() == clean_investor
@@ -891,7 +896,7 @@ with capital_calls_tab:
                 for investor in selected_investors:
                     clean_investor = investor.strip()
                     drawdown_name = manual_drawdown_name_map.get(clean_investor, clean_investor)
-                    notice_display_name = drawdown_name
+                    notice_display_name = manual_notice_display_name_map.get(clean_investor, drawdown_name)
 
                     investor_match = investor_df[
                         investor_df["Limited Partner"].astype(str).str.strip() == clean_investor
