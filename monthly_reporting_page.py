@@ -71,6 +71,10 @@ def _save_upload(uploaded_file, path: Path) -> None:
     path.write_bytes(uploaded_file.getbuffer())
 
 
+def _uploaded_suffix(uploaded_file) -> str:
+    return Path(getattr(uploaded_file, "name", "")).suffix.lower()
+
+
 def _month_from_filename(filename: str, months: tuple[tuple[int, int], ...]) -> tuple[int, int] | None:
     text = filename.lower().replace("'", "")
     text = re.sub(r"[_\-.]+", " ", text)
@@ -113,6 +117,177 @@ def _copy_sheet_values(source_sheet, target_sheet) -> None:
             target_sheet.cell(row=source_cell.row, column=source_cell.column).value = source_cell.value
 
 
+def _parse_pdf_number(value: str) -> float | None:
+    if not re.fullmatch(r"-?\$?[0-9,]+(?:\.\d+)?", value):
+        return None
+    return float(value.replace("$", "").replace(",", ""))
+
+
+def _extract_revolving_games_pdf_rows(pdf_path: Path) -> dict[str, dict[tuple[int, int], float]]:
+    try:
+        import pdfplumber
+    except ImportError as exc:
+        raise RuntimeError("PDF uploads need pdfplumber. Add pdfplumber to requirements.txt and redeploy.") from exc
+
+    month_centers: dict[tuple[int, int], float] = {}
+    rows: dict[str, dict[tuple[int, int], float]] = {}
+
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            words = page.extract_words(keep_blank_chars=False, use_text_flow=False)
+
+            for index, word in enumerate(words[:-1]):
+                if not re.fullmatch(r"[A-Za-z]{3}", word["text"]):
+                    continue
+                next_word = words[index + 1]
+                if abs(next_word["top"] - word["top"]) > 2:
+                    continue
+                if not re.fullmatch(r"20\d{2}", next_word["text"]):
+                    continue
+                try:
+                    month = datetime.strptime(word["text"], "%b").month
+                    year = int(next_word["text"])
+                except ValueError:
+                    continue
+                month_centers[(year, month)] = (word["x0"] + next_word["x1"]) / 2
+
+            if not month_centers:
+                continue
+
+            line_tops = sorted({
+                round(word["top"] / 3) * 3
+                for word in words
+                if 120 <= word["top"] <= 760
+            })
+            for line_top in line_tops:
+                line_words = [
+                    word
+                    for word in words
+                    if round(word["top"] / 3) * 3 == line_top
+                ]
+                label = " ".join(
+                    word["text"]
+                    for word in line_words
+                    if word["x0"] < 300
+                ).strip()
+                if not label or label.startswith("Accrual Basis"):
+                    continue
+
+                for word in line_words:
+                    number = _parse_pdf_number(word["text"])
+                    if number is None or word["x0"] < 300:
+                        continue
+                    x_center = (word["x0"] + word["x1"]) / 2
+                    month_key = min(month_centers, key=lambda key: abs(x_center - month_centers[key]))
+                    if abs(x_center - month_centers[month_key]) > 45:
+                        continue
+                    rows.setdefault(label_key(label), {})[month_key] = number
+
+    return rows
+
+
+def label_key(value: object) -> str:
+    return " ".join(str(value).lower().replace("&", "and").split())
+
+
+def _sum_pdf_rows(
+    source_rows: dict[str, dict[tuple[int, int], float]],
+    labels: tuple[str, ...],
+    month_key: tuple[int, int],
+) -> float:
+    total = 0.0
+    for label in labels:
+        total += source_rows.get(label_key(label), {}).get(month_key, 0.0) or 0.0
+    return total
+
+
+def _convert_revolving_games_pdf_to_workbook(
+    pdf_path: Path,
+    output_path: Path,
+    months: tuple[tuple[int, int], ...],
+) -> None:
+    source_rows = _extract_revolving_games_pdf_rows(pdf_path)
+
+    operations_labels = (
+        "Total for 6200 Payroll expenses",
+        "6270 Contract labor",
+        "6275 International Entity Labor",
+        "6420 Business licenses",
+        "6475 Dues, Membership and Subscription",
+        "6540 Payment Processing Fee",
+        "Total for 6790 Utilities",
+        "6920 State Tax Expense",
+    )
+    sga_labels = (
+        "6340 Entertainment",
+        "6370 Meals",
+        "6415 Gifts & Donations",
+        "Total for 6390 Travel",
+        "Total for 6520 Professional Services",
+        "Total for 6740 General business expenses",
+    )
+    other_labels = (
+        "Total for 6400 Office expenses",
+        "6810 Other Personal Expenses",
+        "Total for 6820 Interest paid",
+        "6910 Uncategorized Expense",
+        "6940 Depreciation",
+        "Total for Other Expenses",
+    )
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "P_L_for_Q1_2025"
+    sheet["A1"] = "Revolving Games, Inc."
+    if months:
+        sheet["B1"] = f"Q{((months[-1][1] - 1) // 3) + 1} {months[-1][0]}"
+
+    month_columns = {month_key: index + 2 for index, month_key in enumerate(months)}
+    for month_key, col in month_columns.items():
+        year, month = month_key
+        sheet.cell(row=2, column=col).value = datetime(year, month, 1)
+
+    metric_rows = {
+        "Revenue": 3,
+        "Operations": 4,
+        "SG&A": 5,
+        "Marketing": 6,
+        "Software and Servers": 7,
+        "Other expenses": 8,
+        "Total Expenses": 9,
+        "Net Burn": 10,
+    }
+    for label, row in metric_rows.items():
+        sheet.cell(row=row, column=1).value = label
+
+    for month_key, col in month_columns.items():
+        revenue = source_rows.get(label_key("Total for Income"), {}).get(month_key, 0.0) or 0.0
+        operations = _sum_pdf_rows(source_rows, operations_labels, month_key)
+        sga = _sum_pdf_rows(source_rows, sga_labels, month_key)
+        marketing = source_rows.get(label_key("Total for 6510 Advertising & marketing"), {}).get(month_key, 0.0) or 0.0
+        software = source_rows.get(label_key("Computer Equipment"), {}).get(month_key, 0.0) or 0.0
+        other = _sum_pdf_rows(source_rows, other_labels, month_key)
+        total_expenses = -(operations + sga + marketing + software + other)
+
+        values = {
+            "Revenue": revenue,
+            "Operations": operations,
+            "SG&A": sga,
+            "Marketing": marketing,
+            "Software and Servers": software,
+            "Other expenses": other,
+            "Total Expenses": total_expenses,
+            "Net Burn": revenue + total_expenses,
+        }
+        for label, row in metric_rows.items():
+            sheet.cell(row=row, column=col).value = round(values[label], 2)
+
+    sheet["A12"] = "*Converted from Revolving Games PDF P&L"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(output_path)
+    workbook.close()
+
+
 def _save_kpi_uploads(
     profile_name: str,
     uploaded_files: list,
@@ -120,6 +295,12 @@ def _save_kpi_uploads(
     months: tuple[tuple[int, int], ...],
 ) -> None:
     if len(uploaded_files) == 1:
+        if profile_name == "revolving_games" and _uploaded_suffix(uploaded_files[0]) == ".pdf":
+            with tempfile.TemporaryDirectory() as pdf_tmp:
+                pdf_path = Path(pdf_tmp) / "revolving_games.pdf"
+                _save_upload(uploaded_files[0], pdf_path)
+                _convert_revolving_games_pdf_to_workbook(pdf_path, path, months)
+            return
         _save_upload(uploaded_files[0], path)
         return
 
@@ -130,8 +311,13 @@ def _save_kpi_uploads(
     with tempfile.TemporaryDirectory() as combine_tmp:
         combine_dir = Path(combine_tmp)
         for file_index, uploaded_file in enumerate(uploaded_files, start=1):
-            source_path = combine_dir / f"source_{file_index}.xlsx"
+            source_suffix = _uploaded_suffix(uploaded_file)
+            source_path = combine_dir / f"source_{file_index}{source_suffix or '.xlsx'}"
             _save_upload(uploaded_file, source_path)
+            if profile_name == "revolving_games" and source_suffix == ".pdf":
+                converted_path = combine_dir / f"source_{file_index}_converted.xlsx"
+                _convert_revolving_games_pdf_to_workbook(source_path, converted_path, months)
+                source_path = converted_path
             source_workbook = load_workbook(source_path, data_only=True)
             try:
                 file_month = _month_from_filename(uploaded_file.name, months)
@@ -798,9 +984,10 @@ def render_monthly_reporting_page() -> None:
         upload_cols = st.columns(2)
         for index, (profile_name, profile) in enumerate(PROFILES.items()):
             with upload_cols[index % 2]:
+                accepted_types = ["xlsx", "pdf"] if profile_name == "revolving_games" else ["xlsx"]
                 uploaded = st.file_uploader(
                     profile.display_name,
-                    type=["xlsx"],
+                    type=accepted_types,
                     key=f"kpi_{profile_name}",
                     accept_multiple_files=True,
                 )
