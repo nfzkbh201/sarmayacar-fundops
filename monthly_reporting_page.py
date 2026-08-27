@@ -21,9 +21,11 @@ from google_drive_connector import (
 )
 from intelligence_detector import run_intelligence_checks
 from monthly_reporting_automation import (
+    FX_MANAGED_PROFILES,
     INACTIVE_COMPANIES,
     PENDING_COMPANIES,
     PROFILES,
+    default_fx_rate,
     find_month_columns,
     run_batch_update,
     validate_kpi_file,
@@ -358,6 +360,80 @@ def _summary_name(months: tuple[tuple[int, int], ...]) -> str:
 
 def _source_trace_name(months: tuple[tuple[int, int], ...]) -> str:
     return f"{Path(_output_name(months)).stem} - source trace.csv"
+
+
+def _fx_preview_rows(
+    selected_months: tuple[tuple[int, int], ...],
+    kpi_validation_paths: dict[str, Path],
+) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for profile_name in FX_MANAGED_PROFILES:
+        profile = PROFILES.get(profile_name)
+        if profile is None:
+            continue
+
+        preview_workbook = None
+        kpi_path = kpi_validation_paths.get(profile_name)
+        if profile_name == "roomy" and kpi_path is not None and kpi_path.exists():
+            preview_workbook = load_workbook(kpi_path, data_only=True)
+
+        try:
+            for month_key in selected_months:
+                value = default_fx_rate(profile_name, month_key, preview_workbook)
+                year, month = month_key
+                if profile_name == "roomy":
+                    if value in (None, ""):
+                        source = "KPI workbook label not found"
+                        note = "Editable if the KPI sheet uses a new FX line."
+                    else:
+                        source = "KPI workbook label"
+                        note = "Pulled from the uploaded KPI file."
+                elif profile_name == "procheck":
+                    source = "Forecast fallback"
+                    note = "Blank here keeps the workbook fallback behavior."
+                else:
+                    source = "Default FX table"
+                    note = "Editable if the month needs a one-off correction."
+
+                rows.append(
+                    {
+                        "Company": profile.display_name,
+                        "Month": f"{month_abbr[month]} {str(year)[-2:]}",
+                        "FX Rate": value,
+                        "Source": source,
+                        "Note": note,
+                    }
+                )
+        finally:
+            if preview_workbook is not None:
+                preview_workbook.close()
+
+    return rows
+
+
+def _build_fx_overrides(
+    rows: list[dict[str, object]],
+    selected_months: tuple[tuple[int, int], ...],
+) -> dict[str, dict[tuple[int, int], object]]:
+    month_lookup = {
+        f"{month_abbr[month]} {str(year)[-2:]}": month_key
+        for month_key in selected_months
+        for year, month in (month_key,)
+    }
+    profile_lookup = {profile.display_name: profile_name for profile_name, profile in PROFILES.items()}
+    overrides: dict[str, dict[tuple[int, int], object]] = {}
+
+    for row in rows:
+        company = profile_lookup.get(str(row.get("Company", "")))
+        month_key = month_lookup.get(str(row.get("Month", "")))
+        if company is None or month_key is None:
+            continue
+        value = _number_value(row.get("FX Rate"))
+        if value is None:
+            continue
+        overrides.setdefault(company, {})[month_key] = value
+
+    return overrides
 
 
 def _latest_output_rows(limit: int = 8) -> list[dict[str, str]]:
@@ -1023,6 +1099,7 @@ def render_monthly_reporting_page() -> None:
         "status_counts": {"Blocked": 0, "Warning": 0, "Review": 0},
         "blocked": False,
     }
+    fx_preview_rows: list[dict[str, object]] = []
     normalization_summary = {
         "rows": [],
         "status_counts": {"Auto-ready": 0, "Review": 0, "Missing": 0},
@@ -1100,6 +1177,9 @@ def render_monthly_reporting_page() -> None:
             )
             validation_blocked = validation_blocked or bool(intelligence_summary.get("blocked"))
 
+        if template_validation_path is not None:
+            fx_preview_rows = _fx_preview_rows(selected_months, kpi_validation_paths)
+
     with st.container(border=True):
         st.subheader("Readiness checks")
         status_counts = {
@@ -1162,6 +1242,7 @@ def render_monthly_reporting_page() -> None:
         st.caption(normalization_summary["model_status"])
 
         normalization_rows = normalization_summary["rows"]
+        fx_overrides: dict[str, dict[tuple[int, int], object]] = {}
         if normalization_rows:
             show_all_normalization = st.checkbox(
                 "Show auto-ready sample rows",
@@ -1256,6 +1337,27 @@ def render_monthly_reporting_page() -> None:
                     else:
                         st.warning("No mappings were selected for approval.")
 
+            if fx_preview_rows:
+                with st.container(border=True):
+                    st.subheader("FX rates")
+                    st.caption("These rates are visible and editable before the workbook is generated. Leave a value blank to keep the built-in workbook behavior.")
+                    edited_fx_rows = st.data_editor(
+                        fx_preview_rows,
+                        hide_index=True,
+                        width="stretch",
+                        disabled=["Company", "Month", "Source", "Note"],
+                        key="fx_rate_editor",
+                        column_config={
+                            "FX Rate": st.column_config.NumberColumn("FX Rate", format="%.6f"),
+                        },
+                    )
+                    fx_overrides = _build_fx_overrides(edited_fx_rows, selected_months)
+                    if fx_overrides:
+                        total_overrides = sum(len(months) for months in fx_overrides.values())
+                        st.info(f"Using {total_overrides} edited FX rate{'s' if total_overrides != 1 else ''} in this run.")
+                    else:
+                        st.caption("No FX overrides entered. The app will use the default or KPI-derived rates.")
+
             st.download_button(
                 "Download normalization review",
                 data=_rows_to_csv(normalization_rows),
@@ -1344,6 +1446,7 @@ def render_monthly_reporting_page() -> None:
                 kpi_files=kpi_paths,
                 output_path=output_path,
                 months=selected_months,
+                fx_overrides=fx_overrides,
             )
             summary["omitted_companies"] = [
                 profile.display_name

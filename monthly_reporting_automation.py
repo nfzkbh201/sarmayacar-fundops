@@ -58,6 +58,51 @@ TAPMAD_FX_RATES = {
     (2025, 12): 282.2447,
 }
 
+FX_MANAGED_PROFILES = ("simpaisa", "oneload", "tapmad", "roomy", "procheck")
+
+
+def default_fx_rate(
+    profile_name: str,
+    month_key: tuple[int, int],
+    kpi_workbook=None,
+) -> object | None:
+    if profile_name == "oneload":
+        return ONELOAD_FX_RATES.get(month_key)
+    if profile_name == "tapmad":
+        return TAPMAD_FX_RATES.get(month_key)
+    if profile_name == "simpaisa":
+        legacy_fx = {
+            (2024, 1): 280.3206,
+            (2024, 2): 279.18,
+            (2024, 3): 278.705,
+            (2025, 4): 280.713,
+            (2025, 5): 281.66,
+            (2025, 6): 283.0,
+            (2025, 7): 284.2133,
+            (2025, 8): 282.2447,
+            (2025, 9): 282.2447,
+        }
+        return legacy_fx.get(month_key, 282)
+    if profile_name == "roomy" and kpi_workbook is not None:
+        source_sheet = find_workbook_month_sheet(kpi_workbook, month_key)
+        if source_sheet is None:
+            return None
+        return find_roomy_fx_label(source_sheet)
+    return None
+
+
+def resolve_fx_rate(
+    profile_name: str,
+    month_key: tuple[int, int],
+    kpi_workbook=None,
+    fx_overrides: Mapping[str, Mapping[tuple[int, int], object]] | None = None,
+) -> object | None:
+    if fx_overrides:
+        override = fx_overrides.get(profile_name, {}).get(month_key)
+        if override not in (None, ""):
+            return override
+    return default_fx_rate(profile_name, month_key, kpi_workbook)
+
 
 @dataclass(frozen=True)
 class SectionMap:
@@ -381,8 +426,16 @@ BYKEA_PROFILE = LabelCopyProfile(
 )
 
 BYKEA_VISIBLE_SUMMARY_LABELS = {
+    "net revenue": ("pc1",),
     "driver incentives": ("driver incent.", "driver incentives"),
     "marketing": ("marketing",),
+    "tech": ("cloud variable costs", "total cloud variable costs"),
+    "overheads": ("people", "facilities", "other g&a", "others"),
+}
+
+BYKEA_COMPOSITE_SUMMARY_LABELS = {
+    "driver incentives": (("commission refund",), ("driver incent.", "driver incentives")),
+    "overheads": (("people",), ("facilities",), ("other g&a",), ("others",)),
 }
 
 PROCHECK_PROFILE = LabelCopyProfile(
@@ -1403,27 +1456,27 @@ def get_bykea_visible_summary_sources(
     source_col = source_month_column(sheet, month_key)
     if source_col is None:
         return []
-    source_row = find_bykea_visible_summary_row(sheet, metric_key, source_col)
-    if source_row is None:
-        return []
 
     sources: list[tuple[Worksheet, int, int, object]] = []
-    if metric_key == "driver incentives" and month_key < (2026, 1):
-        commission_row = find_bykea_visible_summary_row_for_labels(
-            sheet,
-            ("commission refund",),
-            source_col,
-        )
-        if commission_row is not None:
+    composite_labels = BYKEA_COMPOSITE_SUMMARY_LABELS.get(metric_key or "")
+    if composite_labels:
+        for labels in composite_labels:
+            source_row = find_bykea_visible_summary_row_for_labels(sheet, labels, source_col)
+            if source_row is None:
+                return []
             sources.append(
                 (
                     sheet,
-                    commission_row,
+                    source_row,
                     source_col,
-                    sheet.cell(row=commission_row, column=source_col).value,
+                    sheet.cell(row=source_row, column=source_col).value,
                 )
             )
+        return sources
 
+    source_row = find_bykea_visible_summary_row(sheet, metric_key, source_col)
+    if source_row is None:
+        return []
     sources.append((sheet, source_row, source_col, sheet.cell(row=source_row, column=source_col).value))
     return sources
 
@@ -1928,6 +1981,7 @@ def update_label_copy_company(
     profile: LabelCopyProfile,
     kpi_path: Path,
     months: tuple[tuple[int, int], ...],
+    fx_overrides: Mapping[str, Mapping[tuple[int, int], object]] | None = None,
 ) -> dict[str, object]:
     if profile.report_sheet not in report_workbook.sheetnames:
         raise KeyError(f"Report sheet {profile.report_sheet!r} was not found in the template.")
@@ -2123,10 +2177,11 @@ def update_label_copy_company(
                         rows_matched.add(row)
                         continue
                     if row == 41:
-                        if write_simpaisa_value(legacy_fx.get((year, month))):
+                        fx_value = resolve_fx_rate(profile.name, (year, month), kpi_workbook, fx_overrides)
+                        if write_simpaisa_value(fx_value):
                             forecast_fx_cell = report_sheet.cell(row=row, column=target_col + 1)
                             if not isinstance(forecast_fx_cell, MergedCell):
-                                forecast_fx_cell.value = legacy_fx.get((year, month))
+                                forecast_fx_cell.value = fx_value
                             values_written += 1
                             rows_matched.add(row)
                         continue
@@ -2609,7 +2664,7 @@ def update_label_copy_company(
                     continue
 
                 if row in (58,):
-                    fx_value = ONELOAD_FX_RATES.get((year, month))
+                    fx_value = resolve_fx_rate(profile.name, (year, month), kpi_workbook, fx_overrides)
                     if write_oneload_value(fx_value):
                         values_written += 1
                         rows_matched.add(row)
@@ -3105,22 +3160,25 @@ def update_label_copy_company(
                 rows_matched.add(row)
                 continue
 
-            if original_key in row_rules:
-                if profile.name == "bykea" and original_key in BYKEA_VISIBLE_SUMMARY_LABELS:
-                    bykea_source = get_bykea_visible_summary_source(
-                        kpi_workbook,
-                        original_key,
-                        (year, month),
-                    )
-                    if bykea_source is not None:
-                        _source_sheet, _source_row, _source_col, value = bykea_source
-                        if value is None:
-                            continue
-                        target_cell.value = clean_number(value) if profile.round_values else value
-                        values_written += 1
-                        rows_matched.add(row)
-                        continue
+            if profile.name == "bykea" and original_key in BYKEA_VISIBLE_SUMMARY_LABELS:
+                bykea_source = get_bykea_visible_summary_source(
+                    kpi_workbook,
+                    original_key,
+                    (year, month),
+                )
+                if bykea_source is None:
+                    if label and label not in missing_labels:
+                        missing_labels.append(label)
+                    continue
+                _source_sheet, _source_row, _source_col, value = bykea_source
+                if value is None:
+                    continue
+                target_cell.value = clean_number(value) if profile.round_values else value
+                values_written += 1
+                rows_matched.add(row)
+                continue
 
+            if original_key in row_rules:
                 value = get_row_rule_value(kpi_workbook, row_rules[original_key], (year, month), profile.name)
                 if value is None:
                     continue
@@ -3186,11 +3244,7 @@ def update_label_copy_company(
                 forecast_col = actual_col + 1
                 if forecast_col <= report_sheet.max_column:
                     forecast_letter = report_sheet.cell(row=1, column=forecast_col).column_letter
-                    fx_value = {
-                        (2024, 1): 280.3206,
-                        (2024, 2): 279.18,
-                        (2024, 3): 278.705,
-                    }.get(month_key)
+                    fx_value = resolve_fx_rate(profile.name, month_key, kpi_workbook, fx_overrides)
                     forecast_fx_cell = report_sheet.cell(row=41, column=forecast_col)
                     if not isinstance(forecast_fx_cell, MergedCell):
                         forecast_fx_cell.value = fx_value
@@ -3206,14 +3260,7 @@ def update_label_copy_company(
             forecast_col = actual_col + 1
             if forecast_col > report_sheet.max_column:
                 continue
-            simpaisa_fx = {
-                (2025, 4): 280.713,
-                (2025, 5): 281.66,
-                (2025, 6): 283.0,
-                (2025, 7): 284.2133,
-                (2025, 8): 282.2447,
-                (2025, 9): 282.2447,
-            }.get(month_key, 282)
+            simpaisa_fx = resolve_fx_rate(profile.name, month_key, kpi_workbook, fx_overrides)
             report_sheet.cell(row=42, column=actual_col).value = simpaisa_fx
             forecast_fx_cell = report_sheet.cell(row=42, column=forecast_col)
             if not isinstance(forecast_fx_cell, MergedCell):
@@ -3260,6 +3307,13 @@ def update_label_copy_company(
     if profile.name == "procheck":
         for month_key in active_months:
             actual_col = target_month_cols.get(month_key)
+            if actual_col is not None:
+                forecast_col = actual_col + 1
+                if forecast_col <= report_sheet.max_column:
+                    actual_fx_cell = report_sheet.cell(row=12, column=actual_col)
+                    forecast_fx_cell = report_sheet.cell(row=12, column=forecast_col)
+                    if actual_fx_cell.value in (None, "") and forecast_fx_cell.value not in (None, ""):
+                        actual_fx_cell.value = forecast_fx_cell.value
             if actual_col is not None and month_key == (2025, 5):
                 report_sheet.cell(row=42, column=actual_col + 1).value = 0
             if month_key[0] != 2024:
@@ -3551,7 +3605,7 @@ def update_label_copy_company(
                 report_sheet.cell(row=45, column=target_actual_col).value = datetime(2025, 9, 25)
             else:
                 report_sheet.cell(row=45, column=target_actual_col).value = f"={target_letter}3"
-            fx_value = TAPMAD_FX_RATES.get(month_key)
+            fx_value = resolve_fx_rate(profile.name, month_key, kpi_workbook, fx_overrides)
             report_sheet.cell(row=61, column=target_actual_col).value = fx_value
             report_sheet.cell(row=61, column=target_forecast_col).value = fx_value
             report_sheet.cell(row=62, column=target_actual_col).value = datetime(month_key[0], month_key[1], 25)
@@ -3563,11 +3617,7 @@ def update_label_copy_company(
                 report_sheet.cell(row=38, column=target_forecast_col).value = f"=+{previous_forecast_ref}+52621"
 
             if month_key[0] == 2024:
-                fx_value = {
-                    (2024, 1): 279.51,
-                    (2024, 2): 279.18,
-                    (2024, 3): 278.7,
-                }[month_key]
+                fx_value = resolve_fx_rate(profile.name, month_key, kpi_workbook, fx_overrides)
                 source_forecast_col = source_actual_col + 1
 
                 def set_tapmad_cell(row: int, col: int, value: object | None) -> None:
@@ -4325,7 +4375,7 @@ def update_label_copy_company(
             if actual_col is None:
                 continue
             forecast_col = actual_col + 1
-            fx_value = ONELOAD_FX_RATES.get((year, month))
+            fx_value = resolve_fx_rate(profile.name, (year, month), kpi_workbook, fx_overrides)
             report_sheet.cell(row=58, column=actual_col).value = fx_value
             report_sheet.cell(row=58, column=forecast_col).value = fx_value
             if (year, month) in ((2025, 4), (2025, 5)):
@@ -4708,6 +4758,7 @@ def update_company_in_workbook(
     profile: CompanyProfile,
     kpi_path: Path,
     months: tuple[tuple[int, int], ...],
+    fx_overrides: Mapping[str, Mapping[tuple[int, int], object]] | None = None,
 ) -> dict[str, object]:
     if profile.report_sheet not in report_workbook.sheetnames:
         raise KeyError(f"Report sheet {profile.report_sheet!r} was not found in the template.")
@@ -4821,6 +4872,7 @@ def run_batch_update(
     kpi_files: Mapping[str, Path],
     output_path: Path,
     months: tuple[tuple[int, int], ...],
+    fx_overrides: Mapping[str, Mapping[tuple[int, int], object]] | None = None,
 ) -> dict[str, object]:
     report_workbook = load_workbook(template_path)
     company_summaries = []
@@ -4845,6 +4897,7 @@ def run_batch_update(
                 profile=profile,
                 kpi_path=kpi_path,
                 months=months,
+                fx_overrides=fx_overrides,
             )
             company_summaries.append(summary)
             formula_months_by_profile[profile_name] = months
@@ -4854,6 +4907,7 @@ def run_batch_update(
                 profile=profile,
                 kpi_path=kpi_path,
                 months=months,
+                fx_overrides=fx_overrides,
             )
             company_summaries.append(summary)
             missing = {
@@ -4936,12 +4990,14 @@ def run_update(
     kpi_path: Path,
     output_path: Path,
     months: tuple[tuple[int, int], ...],
+    fx_overrides: Mapping[str, Mapping[tuple[int, int], object]] | None = None,
 ) -> dict[str, object]:
     summary = run_batch_update(
         template_path=template_path,
         kpi_files={profile.name: kpi_path},
         output_path=output_path,
         months=months,
+        fx_overrides=fx_overrides,
     )
     company_summary = summary["companies"][0]
     return {
