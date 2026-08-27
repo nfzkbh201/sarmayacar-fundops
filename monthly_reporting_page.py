@@ -25,7 +25,7 @@ from monthly_reporting_automation import (
     INACTIVE_COMPANIES,
     PENDING_COMPANIES,
     PROFILES,
-    default_fx_rate,
+    describe_fx_rate,
     find_month_columns,
     run_batch_update,
     validate_kpi_file,
@@ -379,21 +379,11 @@ def _fx_preview_rows(
 
         try:
             for month_key in selected_months:
-                value = default_fx_rate(profile_name, month_key, preview_workbook)
                 year, month = month_key
-                if profile_name == "roomy":
-                    if value in (None, ""):
-                        source = "KPI workbook label not found"
-                        note = "Editable if the KPI sheet uses a new FX line."
-                    else:
-                        source = "KPI workbook label"
-                        note = "Pulled from the uploaded KPI file."
-                elif profile_name == "procheck":
+                value, source, note = describe_fx_rate(profile_name, month_key, preview_workbook)
+                if profile_name == "procheck":
                     source = "Forecast fallback"
                     note = "Blank here keeps the workbook fallback behavior."
-                else:
-                    source = "Default FX table"
-                    note = "Editable if the month needs a one-off correction."
 
                 rows.append(
                     {

@@ -8,12 +8,17 @@ portfolio-company KPI packs. ABHI is implemented as the first reusable profile.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 from dataclasses import dataclass
+from functools import lru_cache
+from calendar import monthrange
 from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable, Mapping
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from openpyxl.cell.cell import MergedCell
 from openpyxl import load_workbook
@@ -59,17 +64,91 @@ TAPMAD_FX_RATES = {
 }
 
 FX_MANAGED_PROFILES = ("simpaisa", "oneload", "tapmad", "roomy", "procheck")
+NBP_RATE_SHEET_URL_TEMPLATE = (
+    "https://www.nbp.com.pk/RateSheetFiles/NBP-RateSheet-{day:02d}-{month:02d}-{year}.pdf"
+)
+NBP_LIVE_FX_PROFILES = {"simpaisa", "oneload", "tapmad"}
 
 
-def default_fx_rate(
+@lru_cache(maxsize=256)
+def _download_nbp_rate_sheet_pdf(url: str) -> bytes | None:
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    try:
+        with urlopen(request, timeout=20) as response:
+            return response.read()
+    except (HTTPError, URLError, TimeoutError, OSError):
+        return None
+
+
+def _nbp_rate_sheet_candidates(month_key: tuple[int, int]) -> list[tuple[date, str]]:
+    year, month = month_key
+    last_day = monthrange(year, month)[1]
+    return [
+        (date(year, month, day), NBP_RATE_SHEET_URL_TEMPLATE.format(year=year, month=month, day=day))
+        for day in range(last_day, 0, -1)
+    ]
+
+
+def _parse_nbp_usd_rate(pdf_bytes: bytes) -> float | None:
+    try:
+        import pdfplumber
+    except ImportError:
+        return None
+
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text() or ""
+                for raw_line in text.splitlines():
+                    line = " ".join(raw_line.split())
+                    upper = line.upper()
+                    if "US DOLLAR" not in upper or "USD" not in upper:
+                        continue
+                    numbers = [
+                        float(number.replace(",", ""))
+                        for number in re.findall(r"-?\d[\d,]*(?:\.\d+)?", line)
+                    ]
+                    if len(numbers) >= 2:
+                        return numbers[1]
+    except Exception:
+        return None
+    return None
+
+
+@lru_cache(maxsize=128)
+def _nbp_month_end_rate(month_key: tuple[int, int]) -> tuple[float, date, str] | None:
+    for rate_date, url in _nbp_rate_sheet_candidates(month_key):
+        pdf_bytes = _download_nbp_rate_sheet_pdf(url)
+        if not pdf_bytes:
+            continue
+        rate = _parse_nbp_usd_rate(pdf_bytes)
+        if rate is not None:
+            return rate, rate_date, url
+    return None
+
+
+def _fx_rate_metadata(
     profile_name: str,
     month_key: tuple[int, int],
     kpi_workbook=None,
-) -> object | None:
+) -> tuple[object | None, str, str]:
+    if profile_name in NBP_LIVE_FX_PROFILES:
+        nbp_rate = _nbp_month_end_rate(month_key)
+        if nbp_rate is not None:
+            rate, rate_date, url = nbp_rate
+            return (
+                rate,
+                "NBP month-end PDF",
+                f"Pulled from {rate_date:%d %b %Y} NBP rate sheet ({Path(url).name}).",
+            )
     if profile_name == "oneload":
-        return ONELOAD_FX_RATES.get(month_key)
+        value = ONELOAD_FX_RATES.get(month_key)
+        if value is not None:
+            return value, "Fallback rate table", "Used only if the live NBP PDF lookup is unavailable."
     if profile_name == "tapmad":
-        return TAPMAD_FX_RATES.get(month_key)
+        value = TAPMAD_FX_RATES.get(month_key)
+        if value is not None:
+            return value, "Fallback rate table", "Used only if the live NBP PDF lookup is unavailable."
     if profile_name == "simpaisa":
         legacy_fx = {
             (2024, 1): 280.3206,
@@ -82,13 +161,34 @@ def default_fx_rate(
             (2025, 8): 282.2447,
             (2025, 9): 282.2447,
         }
-        return legacy_fx.get(month_key, 282)
+        value = legacy_fx.get(month_key)
+        if value is not None:
+            return value, "Fallback rate table", "Used only if the live NBP PDF lookup is unavailable."
+        return 282, "Fallback rate table", "Used only if the live NBP PDF lookup is unavailable."
     if profile_name == "roomy" and kpi_workbook is not None:
         source_sheet = find_workbook_month_sheet(kpi_workbook, month_key)
         if source_sheet is None:
-            return None
-        return find_roomy_fx_label(source_sheet)
-    return None
+            return None, "KPI workbook label not found", "Editable if the KPI sheet uses a new FX line."
+        value = find_roomy_fx_label(source_sheet)
+        return value, "KPI workbook label", "Pulled from the uploaded KPI file."
+    return None, "Not configured", "No FX source is configured for this company."
+
+
+def default_fx_rate(
+    profile_name: str,
+    month_key: tuple[int, int],
+    kpi_workbook=None,
+) -> object | None:
+    value, _, _ = _fx_rate_metadata(profile_name, month_key, kpi_workbook)
+    return value
+
+
+def describe_fx_rate(
+    profile_name: str,
+    month_key: tuple[int, int],
+    kpi_workbook=None,
+) -> tuple[object | None, str, str]:
+    return _fx_rate_metadata(profile_name, month_key, kpi_workbook)
 
 
 def resolve_fx_rate(
