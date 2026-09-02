@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Mapping
@@ -86,6 +87,20 @@ def _nearest_formula_source(sheet: Worksheet, row: int, target_col: int) -> tupl
     return None
 
 
+def _stored_formula_source(row_memory: Mapping[str, object], kind: str, row: int) -> tuple[str, str] | None:
+    examples = row_memory.get(f"{kind}_examples")
+    if not isinstance(examples, list):
+        return None
+    for example in examples:
+        if not _formula_like(example):
+            continue
+        match = re.search(r"\b([A-Z]+)\$?\d+\b", str(example))
+        if not match:
+            continue
+        return f"{match.group(1)}{row}", str(example)
+    return None
+
+
 def apply_formula_memory(
     workbook,
     months: tuple[MonthKey, ...],
@@ -143,6 +158,8 @@ def apply_formula_memory(
                     if _formula_like(target_cell.value):
                         continue
                     source = _nearest_formula_source(sheet, row, target_col)
+                    if source is None:
+                        source = _stored_formula_source(row_memory, kind, row)
                     if source is None:
                         missing_formula_sources += 1
                         company_missing += 1
