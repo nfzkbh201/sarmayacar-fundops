@@ -35,6 +35,7 @@ from normalization_memory import (
 
 
 DEFAULT_MONTHS = ((2026, 1), (2026, 2), (2026, 3))
+DEMO_NOTICE = "DEMO — ILLUSTRATIVE DATA"
 
 ONELOAD_FX_RATES = {
     (2025, 4): 280.9,
@@ -72,7 +73,15 @@ NBP_LIVE_FX_PROFILES = {"simpaisa", "oneload", "tapmad"}
 
 @lru_cache(maxsize=256)
 def _download_nbp_rate_sheet_pdf(url: str) -> bytes | None:
-    request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    request = Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+            "Accept": "application/pdf,*/*",
+            "Referer": "https://www.nbp.com.pk/RateSheet/index.aspx",
+            "Origin": "https://www.nbp.com.pk",
+        },
+    )
     try:
         with urlopen(request, timeout=20) as response:
             return response.read()
@@ -2112,6 +2121,7 @@ def update_label_copy_company(
     ignored_rows = set(profile.ignored_rows)
     oneload_source_sheet = None
     oneload_source_cols: dict[tuple[int, int], int] = {}
+    oneload_source_label_rows: dict[str, int] = {}
     if profile.name == "oneload":
         oneload_source_sheet = (
             kpi_workbook["Monthly Tracker OPSPL"]
@@ -2123,6 +2133,11 @@ def update_label_copy_company(
             if oneload_source_sheet is not None
             else {}
         )
+        if oneload_source_sheet is not None:
+            for source_row in range(1, oneload_source_sheet.max_row + 1):
+                source_label = label_key(oneload_source_sheet.cell(row=source_row, column=2).value)
+                if source_label and source_label not in oneload_source_label_rows:
+                    oneload_source_label_rows[source_label] = source_row
     month_column_cache: dict[tuple[str, tuple[int, int]], int | None] = {}
 
     def cached_source_month_column(sheet: Worksheet | None, month_key: tuple[int, int]) -> int | None:
@@ -2137,6 +2152,19 @@ def update_label_copy_company(
     formulas_written = 0
     rows_matched: set[int] = set()
     missing_labels: list[str] = []
+
+    def report_row_label_key(row: int) -> str | None:
+        return (
+            label_key(report_sheet.cell(row=row, column=2).value)
+            or label_key(report_sheet.cell(row=row, column=1).value)
+        )
+
+    simpaisa_new_income_layout = False
+    if profile.name == "simpaisa":
+        simpaisa_new_income_layout = (
+            report_row_label_key(32) == "interest income"
+            and report_row_label_key(33) == "total income"
+        )
 
     for year, month in active_months:
         target_col = target_month_cols.get((year, month))
@@ -2196,6 +2224,7 @@ def update_label_copy_company(
                     return value
 
                 col_letter = target_cell.column_letter
+                target_row_key = report_row_label_key(row)
                 if is_legacy_hpr and year == 2024:
                     legacy_fx = {
                         (2024, 1): 280.3206,
@@ -2377,62 +2406,104 @@ def update_label_copy_company(
                             rows_matched.add(row)
                         continue
                     continue
-                simpaisa_formulas = {
-                    14: f"={col_letter}234",
-                    15: f"={col_letter}235",
-                    16: f"={col_letter}236",
-                    17: f"={col_letter}237",
-                    18: f"={col_letter}238",
-                    19: f"=SUM({col_letter}14:{col_letter}18)",
-                    22: f"={col_letter}240",
-                    23: f"={col_letter}22/{col_letter}19",
-                    24: f"=-{col_letter}242",
-                    25: f"=-{col_letter}243",
-                    26: f"=-{col_letter}244",
-                    27: f"=-{col_letter}245",
-                    28: f"=-{col_letter}246",
-                    29: f"=-{col_letter}247",
-                    30: f"=SUM({col_letter}24:{col_letter}29)",
-                    31: f"={col_letter}22+{col_letter}30",
-                    33: f"={col_letter}270",
-                    34: f"={col_letter}271",
-                    35: f"={col_letter}272",
-                    36: f"={col_letter}273",
-                    37: f"=SUM({col_letter}33:{col_letter}36)",
-                    45: f"={col_letter}14/{col_letter}$42",
-                    46: f"={col_letter}15/{col_letter}$42",
-                    47: f"={col_letter}16/{col_letter}$42",
-                    48: f"={col_letter}17/{col_letter}$42",
-                    49: f"={col_letter}18/{col_letter}$42",
-                    50: f"={col_letter}19/{col_letter}$42",
-                    51: f"={col_letter}20/{col_letter}$42",
-                    52: f"={col_letter}21/{col_letter}$42",
-                    53: f"={col_letter}22/{col_letter}$42",
-                    54: f"={col_letter}53/{col_letter}50",
-                    55: f"={col_letter}24/{col_letter}$42",
-                    56: f"={col_letter}25/{col_letter}$42",
-                    57: f"={col_letter}26/{col_letter}$42",
-                    58: f"={col_letter}27/{col_letter}$42",
-                    59: f"={col_letter}28/{col_letter}$42",
-                    60: f"={col_letter}29/{col_letter}$42",
-                    61: f"={col_letter}30/{col_letter}$42",
-                    62: f"={col_letter}31/{col_letter}$42",
-                    64: f"={col_letter}33",
-                    65: f"={col_letter}34",
-                    66: f"={col_letter}35",
-                    67: f"={col_letter}36",
-                    68: f"={col_letter}37",
-                    69: f"={col_letter}45/{col_letter}64",
-                    70: f"={col_letter}46/{col_letter}65",
-                    71: f"={col_letter}47/{col_letter}66",
-                }
+                if simpaisa_new_income_layout:
+                    simpaisa_formulas = {
+                        14: f"={col_letter}238",
+                        15: f"={col_letter}239",
+                        16: f"={col_letter}240",
+                        17: f"={col_letter}241",
+                        18: f"={col_letter}242",
+                        19: f"=SUM({col_letter}14:{col_letter}18)",
+                        22: f"={col_letter}244",
+                        23: f"={col_letter}22/{col_letter}19",
+                        24: f"=-{col_letter}246",
+                        25: f"=-{col_letter}247",
+                        26: f"=-{col_letter}248",
+                        27: f"=-{col_letter}249",
+                        28: f"=-{col_letter}250",
+                        29: f"=-{col_letter}251",
+                        30: f"=SUM({col_letter}24:{col_letter}29)",
+                        31: f"={col_letter}22+{col_letter}30",
+                        32: f"={col_letter}254",
+                        33: f"={col_letter}31+{col_letter}32",
+                        47: f"={col_letter}14/{col_letter}$44",
+                        48: f"={col_letter}15/{col_letter}$44",
+                        49: f"={col_letter}16/{col_letter}$44",
+                        50: f"={col_letter}17/{col_letter}$44",
+                        51: f"={col_letter}18/{col_letter}$44",
+                        52: f"={col_letter}19/{col_letter}$44",
+                        53: f"={col_letter}20/{col_letter}$44",
+                        54: f"={col_letter}21/{col_letter}$44",
+                        55: f"={col_letter}22/{col_letter}$44",
+                        56: f"={col_letter}55/{col_letter}52",
+                        57: f"={col_letter}24/{col_letter}$44",
+                        58: f"={col_letter}25/{col_letter}$44",
+                        59: f"={col_letter}26/{col_letter}$44",
+                        60: f"={col_letter}27/{col_letter}$44",
+                        61: f"={col_letter}28/{col_letter}$44",
+                        62: f"={col_letter}29/{col_letter}$44",
+                        63: f"={col_letter}30/{col_letter}$44",
+                        64: f"={col_letter}31/{col_letter}$44",
+                        65: f"={col_letter}32/{col_letter}44",
+                        66: f"={col_letter}33/{col_letter}44",
+                    }
+                else:
+                    simpaisa_formulas = {
+                        14: f"={col_letter}234",
+                        15: f"={col_letter}235",
+                        16: f"={col_letter}236",
+                        17: f"={col_letter}237",
+                        18: f"={col_letter}238",
+                        19: f"=SUM({col_letter}14:{col_letter}18)",
+                        22: f"={col_letter}240",
+                        23: f"={col_letter}22/{col_letter}19",
+                        24: f"=-{col_letter}242",
+                        25: f"=-{col_letter}243",
+                        26: f"=-{col_letter}244",
+                        27: f"=-{col_letter}245",
+                        28: f"=-{col_letter}246",
+                        29: f"=-{col_letter}247",
+                        30: f"=SUM({col_letter}24:{col_letter}29)",
+                        31: f"={col_letter}22+{col_letter}30",
+                        33: f"={col_letter}270",
+                        34: f"={col_letter}271",
+                        35: f"={col_letter}272",
+                        36: f"={col_letter}273",
+                        37: f"=SUM({col_letter}33:{col_letter}36)",
+                        45: f"={col_letter}14/{col_letter}$42",
+                        46: f"={col_letter}15/{col_letter}$42",
+                        47: f"={col_letter}16/{col_letter}$42",
+                        48: f"={col_letter}17/{col_letter}$42",
+                        49: f"={col_letter}18/{col_letter}$42",
+                        50: f"={col_letter}19/{col_letter}$42",
+                        51: f"={col_letter}20/{col_letter}$42",
+                        52: f"={col_letter}21/{col_letter}$42",
+                        53: f"={col_letter}22/{col_letter}$42",
+                        54: f"={col_letter}53/{col_letter}50",
+                        55: f"={col_letter}24/{col_letter}$42",
+                        56: f"={col_letter}25/{col_letter}$42",
+                        57: f"={col_letter}26/{col_letter}$42",
+                        58: f"={col_letter}27/{col_letter}$42",
+                        59: f"={col_letter}28/{col_letter}$42",
+                        60: f"={col_letter}29/{col_letter}$42",
+                        61: f"={col_letter}30/{col_letter}$42",
+                        62: f"={col_letter}31/{col_letter}$42",
+                        64: f"={col_letter}33",
+                        65: f"={col_letter}34",
+                        66: f"={col_letter}35",
+                        67: f"={col_letter}36",
+                        68: f"={col_letter}37",
+                        69: f"={col_letter}45/{col_letter}64",
+                        70: f"={col_letter}46/{col_letter}65",
+                        71: f"={col_letter}47/{col_letter}66",
+                    }
                 if row in simpaisa_formulas:
                     target_cell.value = simpaisa_formulas[row]
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
 
-                if row == 38 and is_final_period_month:
+                if row == 38 and is_final_period_month and not simpaisa_new_income_layout:
                     target_cell.value = (
                         f"=sum({col_letter}62,"
                         f"{report_sheet.cell(row=62, column=target_col - 2).coordinate},"
@@ -2441,7 +2512,7 @@ def update_label_copy_company(
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 39 and is_final_period_month:
+                if row == 39 and is_final_period_month and not simpaisa_new_income_layout:
                     target_cell.value = (
                         f"=sum({col_letter}50,"
                         f"{report_sheet.cell(row=50, column=target_col - 2).coordinate},"
@@ -2450,12 +2521,12 @@ def update_label_copy_company(
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 40 and month == months[-2][1]:
+                if row == 40 and month == months[-2][1] and not simpaisa_new_income_layout:
                     target_cell.value = f"={col_letter}53*12"
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 42:
+                if row == (44 if simpaisa_new_income_layout else 42):
                     target_cell.value = 282
                     forecast_cell = report_sheet.cell(row=row, column=target_col + 1)
                     if not isinstance(forecast_cell, MergedCell) and forecast_cell.value in (None, ""):
@@ -2463,33 +2534,33 @@ def update_label_copy_company(
                     values_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 43:
-                    target_cell.value = f"={col_letter}12"
+                if row == (45 if simpaisa_new_income_layout else 43):
+                    target_cell.value = datetime(year, month, 1) if simpaisa_new_income_layout else f"={col_letter}12"
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 44:
+                if row == (46 if simpaisa_new_income_layout else 44):
                     target_cell.value = "Actual"
                     values_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 224:
+                if row == 224 and not simpaisa_new_income_layout:
                     target_cell.value = f"={col_letter}62/{report_sheet.cell(row=62, column=target_col - 2).coordinate}-1"
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row in (225, 226, 227):
+                if row in (225, 226, 227) and not simpaisa_new_income_layout:
                     numerator_row = {225: 64, 226: 65, 227: 66}[row]
                     target_cell.value = f"={col_letter}{numerator_row}/{col_letter}68"
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 228:
+                if row == 228 and not simpaisa_new_income_layout:
                     target_cell.value = f"={col_letter}68/{report_sheet.cell(row=68, column=target_col - 2).coordinate}-1"
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 229 and is_final_period_month:
+                if row == 229 and is_final_period_month and not simpaisa_new_income_layout:
                     sum_refs = [
                         report_sheet.cell(row=62, column=col).coordinate
                         for col in range(target_col, max(target_col - 24, 0), -2)
@@ -2498,7 +2569,7 @@ def update_label_copy_company(
                     formulas_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 230 and is_final_period_month:
+                if row == 230 and is_final_period_month and not simpaisa_new_income_layout:
                     sum_refs = [
                         report_sheet.cell(row=53, column=col).coordinate
                         for col in range(target_col, max(target_col - 24, 0), -2)
@@ -2508,64 +2579,94 @@ def update_label_copy_company(
                     rows_matched.add(row)
                     continue
 
-                if row == 232:
-                    target_cell.value = datetime(2026 if (year, month) == (2025, 12) else year, month, 25)
+                if row == (236 if simpaisa_new_income_layout else 232):
+                    day = 26 if simpaisa_new_income_layout else 25
+                    target_cell.value = datetime(2026 if (year, month) == (2025, 12) else year, month, day)
                     values_written += 1
                     rows_matched.add(row)
                     continue
-                if row == 233:
+                if row == (237 if simpaisa_new_income_layout else 233):
                     target_cell.value = "Actual"
                     values_written += 1
                     rows_matched.add(row)
                     continue
 
-                simpaisa_source_rows = {
-                    234: (8, None, None),
-                    235: (9, None, None),
-                    236: (10, None, None),
-                    237: (11, None, None),
-                    238: (12, None, None),
-                    239: (13, None, None),
-                    240: (14, None, None),
-                    241: (15, None, 4),
-                    242: (16, None, None),
-                    243: (17, None, None),
-                    244: (18, None, None),
-                    245: (19, None if is_final_period_month else 0, None),
-                    246: (20, None, None),
-                    247: (21, None if is_final_period_month else 0, None),
-                    248: (22, None, None),
-                    249: (23, None, None),
-                    250: (24, None, None),
-                    251: (25, None, None),
-                    253: (27, None, None),
-                    254: (28, None, None),
-                    258: (32, None, None),
-                    259: (33, None, None),
-                    260: (34, None, None),
-                    263: (37, None, None),
-                    264: (38, None, None),
-                    265: (39, None, None),
-                    267: (41, None, None),
-                    268: (42, None, None),
-                    270: (44, None, None),
-                    271: (45, None, None),
-                    272: (46, None, None),
-                    273: (47, None, None),
-                    274: (48, None, None),
-                }
-                final_month_formulas = {
-                    239: f"=SUM({col_letter}234:{col_letter}238)",
-                    241: f"={col_letter}240/{col_letter}239",
-                    248: f"=SUM({col_letter}242:{col_letter}247)",
-                    249: f"={col_letter}240-{col_letter}248",
-                    251: f"=SUM({col_letter}249:{col_letter}250)",
-                    260: f"=SUM({col_letter}258:{col_letter}259)",
-                    265: f"=SUM({col_letter}263:{col_letter}264)",
-                    267: f"={col_letter}260-{col_letter}265",
-                    274: f"=SUM({col_letter}270:{col_letter}273)",
-                }
-                if is_final_period_month and (year, month) != (2025, 9) and row in final_month_formulas:
+                if simpaisa_new_income_layout:
+                    simpaisa_source_rows = {
+                        238: (8, None, None),
+                        239: (9, None, None),
+                        240: (10, None, None),
+                        241: (11, None, None),
+                        242: (12, None, None),
+                        244: (14, None, None),
+                        246: (16, None, None),
+                        247: (17, None, None),
+                        248: (18, None, None),
+                        249: (19, None, None),
+                        250: (20, None, None),
+                        251: (21, None, None),
+                        254: (24, None, None),
+                    }
+                    final_month_formulas = {
+                        243: f"=SUM({col_letter}238:{col_letter}242)",
+                        245: f"={col_letter}244/{col_letter}243",
+                        252: f"=SUM({col_letter}246:{col_letter}251)",
+                        253: f"={col_letter}244-{col_letter}252",
+                        255: f"=SUM({col_letter}253:{col_letter}254)",
+                    }
+                else:
+                    simpaisa_source_rows = {
+                        234: (8, None, None),
+                        235: (9, None, None),
+                        236: (10, None, None),
+                        237: (11, None, None),
+                        238: (12, None, None),
+                        239: (13, None, None),
+                        240: (14, None, None),
+                        241: (15, None, 4),
+                        242: (16, None, None),
+                        243: (17, None, None),
+                        244: (18, None, None),
+                        245: (19, None if is_final_period_month else 0, None),
+                        246: (20, None, None),
+                        247: (21, None if is_final_period_month else 0, None),
+                        248: (22, None, None),
+                        249: (23, None, None),
+                        250: (24, None, None),
+                        251: (25, None, None),
+                        253: (27, None, None),
+                        254: (28, None, None),
+                        258: (32, None, None),
+                        259: (33, None, None),
+                        260: (34, None, None),
+                        263: (37, None, None),
+                        264: (38, None, None),
+                        265: (39, None, None),
+                        267: (41, None, None),
+                        268: (42, None, None),
+                        270: (44, None, None),
+                        271: (45, None, None),
+                        272: (46, None, None),
+                        273: (47, None, None),
+                        274: (48, None, None),
+                    }
+                    final_month_formulas = {
+                        239: f"=SUM({col_letter}234:{col_letter}238)",
+                        241: f"={col_letter}240/{col_letter}239",
+                        248: f"=SUM({col_letter}242:{col_letter}247)",
+                        249: f"={col_letter}240-{col_letter}248",
+                        251: f"=SUM({col_letter}249:{col_letter}250)",
+                        260: f"=SUM({col_letter}258:{col_letter}259)",
+                        265: f"=SUM({col_letter}263:{col_letter}264)",
+                        267: f"={col_letter}260-{col_letter}265",
+                        274: f"=SUM({col_letter}270:{col_letter}273)",
+                    }
+                should_write_final_formula = (
+                    (simpaisa_new_income_layout or is_final_period_month)
+                    and (year, month) != (2025, 9)
+                    and row in final_month_formulas
+                )
+                if should_write_final_formula:
                     target_cell.value = final_month_formulas[row]
                     formulas_written += 1
                     rows_matched.add(row)
@@ -2676,29 +2777,31 @@ def update_label_copy_company(
                     return default
 
                 oneload_actual_rows = {
-                    13: (7, 1 / 1000),
-                    14: (9, 1 / 1000),
-                    17: (17, 1000),
-                    18: (20, 1000),
-                    22: (28, 1000),
-                    23: (29, 1000),
-                    30: (38, 1000),
-                    31: (39, 1000),
-                    32: (40, 1000),
-                    33: (41, 1000),
-                    34: (42, 1000),
-                    39: (49, 1000),
-                    40: (50, 1000),
-                    41: (51, 1000),
-                    42: (52, 1000),
-                    43: (53, 1000),
-                    47: (66, 1000),
-                    51: (5, 1 / 1000),
-                    52: (6, 1 / 1000),
-                    53: (8, 1 / 1000),
+                    13: (7, 1 / 1000, "Gross Merchandise Value (GMV)"),
+                    14: (9, 1 / 1000, "MFS throughput"),
+                    17: (17, 1000, "Digital Merchandise"),
+                    18: (20, 1000, "Financial Services"),
+                    22: (28, 1000, "Commission paid to retailers - GSM"),
+                    23: (29, 1000, "Commission paid to retailers - MFS"),
+                    30: (38, 1000, "Cost of Cash-in"),
+                    31: (39, 1000, "S&D Payroll expense (Head office)"),
+                    32: (40, 1000, "S&D Payroll expense (Field management)"),
+                    33: (41, 1000, None),
+                    34: (42, 1000, "Retail Marketing and Promotions/FS cashin cost"),
+                    39: (50, 1000, "Payroll - Admin, Finance & Other"),
+                    40: (51, 1000, "Infrastructure & Connectivity"),
+                    41: (52, 1000, "D&A"),
+                    42: (53, 1000, "Rent, Utilities & Maintenance"),
+                    43: (54, 1000, "Other - Employee Benefits, Travel, Legal, Audit"),
+                    47: (67, 1000, "Net Income"),
+                    51: (5, 1 / 1000, "Number of Active user"),
+                    52: (6, 1 / 1000, "# of Transactions (GMV)"),
+                    53: (8, 1 / 1000, "# of Transactions (MFS)"),
                 }
                 if row in oneload_actual_rows:
-                    source_row, multiplier = oneload_actual_rows[row]
+                    source_row, multiplier, source_label = oneload_actual_rows[row]
+                    if source_label:
+                        source_row = oneload_source_label_rows.get(label_key(source_label), source_row)
                     value = source_number(source_row, multiplier, 0 if row in (14, 23, 34, 53) else None)
                     if row == 13 and isinstance(value, (int, float)):
                         value = round(value, 3)
@@ -2922,6 +3025,41 @@ def update_label_copy_company(
                             rows_matched.add(row)
                             continue
 
+                if source_col is not None and year >= 2026:
+                    letter = target_cell.column_letter
+                    previous_col = target_col - 2
+                    previous_letter = report_sheet.cell(row=1, column=previous_col).column_letter if previous_col >= 1 else letter
+                    standard_dot_formulas = {
+                        15: f"={letter}62",
+                        16: f"={letter}70",
+                        17: f"=SUM({letter}72:{letter}74)",
+                        18: f"={letter}85",
+                        19: f"={letter}84+{letter}86",
+                        20: f"={letter}78",
+                        22: "=0",
+                        23: f"=SUM({letter}18:{letter}22)",
+                        24: f"=SUM({letter}16:{letter}22)",
+                        31: f"=SUM({letter}18:{letter}22)={letter}23",
+                        32: f"=SUM({letter}16:{letter}22)={letter}24",
+                        33: f"={letter}15/{previous_letter}15-1",
+                        34: f"={letter}16/{previous_letter}16-1",
+                        36: f"={letter}26/{previous_letter}26-1",
+                        37: f"={letter}27/{previous_letter}27-1",
+                        38: f"={letter}15/{letter}26",
+                        39: f"={letter}15/{letter}27",
+                        40: f"=-({letter}24/{previous_letter}24-1)",
+                        64: f"={letter}62+{letter}63",
+                        70: f"={letter}64+{letter}68",
+                        75: f"=SUM({letter}70:{letter}74)",
+                        87: f"={letter}78+{letter}84+{letter}85+{letter}86",
+                        89: f"={letter}75+{letter}87",
+                    }
+                    if row in standard_dot_formulas:
+                        target_cell.value = standard_dot_formulas[row]
+                        formulas_written += 1
+                        rows_matched.add(row)
+                        continue
+
                 if row == 26:
                     if month == 2:
                         target_cell.value = f"={report_sheet.cell(row=26, column=target_col - 3).coordinate}*1.25"
@@ -2944,6 +3082,7 @@ def update_label_copy_company(
                         81: (35, 1, 0),
                         82: (36, 1, 0),
                         84: (38, 1, 0),
+                        86: (39, 1, 0),
                         96: (52, 1, 0),
                         98: (54, 1, 0),
                         100: (56, 1, 2),
@@ -2977,7 +3116,7 @@ def update_label_copy_company(
                         163: (120, 1, 0),
                         164: (121, 1, 0),
                     }
-                    if row in (79, 83, 86, 122):
+                    if row in (79, 83, 122):
                         target_cell.value = 0
                         values_written += 1
                         rows_matched.add(row)
@@ -3361,8 +3500,9 @@ def update_label_copy_company(
             if forecast_col > report_sheet.max_column:
                 continue
             simpaisa_fx = resolve_fx_rate(profile.name, month_key, kpi_workbook, fx_overrides)
-            report_sheet.cell(row=42, column=actual_col).value = simpaisa_fx
-            forecast_fx_cell = report_sheet.cell(row=42, column=forecast_col)
+            simpaisa_fx_row = 44 if simpaisa_new_income_layout else 42
+            report_sheet.cell(row=simpaisa_fx_row, column=actual_col).value = simpaisa_fx
+            forecast_fx_cell = report_sheet.cell(row=simpaisa_fx_row, column=forecast_col)
             if not isinstance(forecast_fx_cell, MergedCell):
                 forecast_fx_cell.value = simpaisa_fx
             if month_key[0] == 2025 and month_key[1] in (7, 8, 9):
@@ -3372,23 +3512,23 @@ def update_label_copy_company(
                 if month_key == (2025, 9):
                     report_sheet.cell(row=247, column=actual_col).value = 0
                 continue
-            if month_key == months[0]:
+            if month_key == months[0] and not simpaisa_new_income_layout:
                 for row, source_row in {229: 50, 230: 68}.items():
                     sum_refs = [
                         report_sheet.cell(row=source_row, column=col).coordinate
                         for col in range(actual_col + 4, actual_col - 20, -2)
                     ]
-                    report_sheet.cell(row=row, column=actual_col).value = f"=sum({','.join(sum_refs)})"
+                report_sheet.cell(row=row, column=actual_col).value = f"=sum({','.join(sum_refs)})"
                 report_sheet.cell(row=229, column=forecast_col).value = None
                 report_sheet.cell(row=230, column=forecast_col).value = None
-            if len(months) > 1 and month_key == months[1]:
+            if len(months) > 1 and month_key == months[1] and not simpaisa_new_income_layout:
                 for row, source_row in {229: 62, 230: 53}.items():
                     sum_refs = [
                         report_sheet.cell(row=source_row, column=col).coordinate
                         for col in range(forecast_col - 23, forecast_col - 47, -2)
                     ]
                     report_sheet.cell(row=row, column=forecast_col).value = f"=sum({','.join(sum_refs)})"
-            if month_key == months[-1]:
+            if month_key == months[-1] and not simpaisa_new_income_layout:
                 actual_letter = report_sheet.cell(row=1, column=actual_col).column_letter
                 previous_quarter_letter = report_sheet.cell(row=1, column=actual_col - 6).column_letter
                 report_sheet.cell(row=38, column=forecast_col).value = f"={actual_letter}38/{previous_quarter_letter}38-1"
@@ -3398,7 +3538,7 @@ def update_label_copy_company(
                     f"={report_sheet.cell(row=230, column=actual_col).coordinate}/"
                     f"{report_sheet.cell(row=230, column=actual_col - 1).coordinate}-1"
                 )
-            if month_key in ((2025, 10), (2025, 11), (2025, 12)):
+            if month_key in ((2025, 10), (2025, 11), (2025, 12)) and not simpaisa_new_income_layout:
                 actual_letter = report_sheet.cell(row=1, column=actual_col).column_letter
                 previous_actual_letter = report_sheet.cell(row=1, column=actual_col - 2).column_letter
                 report_sheet.cell(row=224, column=actual_col).value = f"={actual_letter}62/{previous_actual_letter}62 -1"
@@ -5065,6 +5205,9 @@ def run_batch_update(
         report_workbook.calculation.fullCalcOnLoad = True
         report_workbook.calculation.forceFullCalc = True
         report_workbook.calculation.calcMode = "auto"
+
+    if report_workbook.worksheets and not report_workbook.worksheets[0]["A1"].value:
+        report_workbook.worksheets[0]["A1"] = DEMO_NOTICE
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     report_workbook.save(output_path)

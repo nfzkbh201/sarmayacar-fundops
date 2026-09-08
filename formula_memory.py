@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable, Mapping
 
 from openpyxl.cell.cell import MergedCell
+from openpyxl.utils import column_index_from_string, get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 
@@ -28,6 +29,15 @@ FORMULA_ERROR_TOKENS = ("#REF!", "#VALUE!", "#NAME?", "#DIV/0!", "#N/A")
 MonthKey = tuple[int, int]
 FindMonthColumns = Callable[[Worksheet, tuple[MonthKey, ...]], dict[MonthKey, int]]
 TranslateFormula = Callable[[str, str, str], str]
+
+
+def _label_key(value: object) -> str | None:
+    if value in (None, ""):
+        return None
+    text = str(value).strip().lower()
+    text = re.sub(r"\s+", " ", text)
+    text = text.replace("\xa0", " ")
+    return text or None
 
 
 def blank_formula_memory() -> dict[str, object]:
@@ -94,11 +104,28 @@ def _stored_formula_source(row_memory: Mapping[str, object], kind: str, row: int
     for example in examples:
         if not _formula_like(example):
             continue
-        match = re.search(r"\b([A-Z]+)\$?\d+\b", str(example))
+        match = re.search(r"\b([A-Z]+)\$?(\d+)\b", str(example))
         if not match:
             continue
-        return f"{match.group(1)}{row}", str(example)
+        ref_col = column_index_from_string(match.group(1))
+        ref_row = int(match.group(2))
+        if ref_row == row:
+            origin_col = ref_col + 1
+        else:
+            origin_col = ref_col
+        return f"{get_column_letter(origin_col)}{row}", str(example)
     return None
+
+
+def _formula_references_cell(formula: object, coordinate: str) -> bool:
+    if not _formula_like(formula):
+        return False
+    column_match = re.match(r"([A-Z]+)(\d+)", coordinate)
+    if not column_match:
+        return False
+    column, row = column_match.groups()
+    pattern = rf"(?<![A-Z0-9_])\$?{re.escape(column)}\$?{re.escape(row)}(?![A-Z0-9_])"
+    return re.search(pattern, str(formula), flags=re.IGNORECASE) is not None
 
 
 def apply_formula_memory(
@@ -146,6 +173,14 @@ def apply_formula_memory(
                 row = int(row_text)
             except ValueError:
                 continue
+            if profile_name == "simpaisa":
+                stored_label_key = _label_key(row_memory.get("label"))
+                current_label_key = (
+                    _label_key(sheet.cell(row=row, column=2).value)
+                    or _label_key(sheet.cell(row=row, column=1).value)
+                )
+                if stored_label_key and stored_label_key != current_label_key:
+                    continue
             for month_key, actual_col in target_cols.items():
                 for kind, target_col in (("actual", actual_col), ("forecast", actual_col + 1)):
                     if not row_memory.get(kind):
@@ -167,7 +202,12 @@ def apply_formula_memory(
                     source_ref, source_formula = source
                     if target_cell.value not in (None, ""):
                         static_values_overwritten += 1
-                    target_cell.value = translate_formula(source_formula, source_ref, target_cell.coordinate)
+                    translated = translate_formula(source_formula, source_ref, target_cell.coordinate)
+                    if _formula_references_cell(translated, target_cell.coordinate):
+                        missing_formula_sources += 1
+                        company_missing += 1
+                        continue
+                    target_cell.value = translated
                     formulas_written += 1
                     company_written += 1
 
@@ -231,6 +271,14 @@ def audit_formula_memory(
                 row = int(row_text)
             except ValueError:
                 continue
+            if profile_name == "simpaisa":
+                stored_label_key = _label_key(row_memory.get("label"))
+                current_label_key = (
+                    _label_key(sheet.cell(row=row, column=2).value)
+                    or _label_key(sheet.cell(row=row, column=1).value)
+                )
+                if stored_label_key and stored_label_key != current_label_key:
+                    continue
             label = row_memory.get("label", "")
             for month_key, actual_col in target_cols.items():
                 for kind, target_col in (("actual", actual_col), ("forecast", actual_col + 1)):
@@ -249,6 +297,8 @@ def audit_formula_memory(
                         issue_type = "static_value_in_formula_row"
                     elif _has_formula_error(value):
                         issue_type = "formula_error_token"
+                    elif _formula_references_cell(value, cell.coordinate):
+                        issue_type = "circular_self_reference"
                     if not issue_type:
                         continue
                     company_issue_count += 1
