@@ -942,6 +942,7 @@ def _render_latest_outputs() -> None:
 
 def render_monthly_reporting_page() -> None:
     st.header("Monthly Reporting")
+    st.info("DEMO — ILLUSTRATIVE DATA")
     st.caption("Upload the reporting template and whichever company KPI files have arrived. Missing companies or missing months are left blank.")
 
     first_historical_year = 2021
@@ -1229,7 +1230,6 @@ def render_monthly_reporting_page() -> None:
         normalization_cols[0].metric("Auto-ready", normalization_counts["Auto-ready"])
         normalization_cols[1].metric("Review", normalization_counts["Review"])
         normalization_cols[2].metric("Missing", normalization_counts["Missing"])
-        st.caption(normalization_summary["model_status"])
 
         normalization_rows = normalization_summary["rows"]
         fx_overrides: dict[str, dict[tuple[int, int], object]] = {}
