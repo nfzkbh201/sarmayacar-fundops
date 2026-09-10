@@ -12,6 +12,7 @@ from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
 from monthly_reporting_automation import (
+    BYKEA_VISIBLE_SUMMARY_LABELS,
     CompanyProfile,
     LabelCopyProfile,
     PROFILES,
@@ -394,6 +395,47 @@ def _find_fixed_rule_source(
     )
 
 
+def _find_sheet_label_cell_value(sheet, label: str, value_column: int) -> tuple[str, object] | None:
+    wanted = label_key(label)
+    if wanted is None:
+        return None
+
+    for row in range(1, sheet.max_row + 1):
+        row_keys = (
+            label_key(sheet.cell(row=row, column=3).value),
+            label_key(sheet.cell(row=row, column=4).value),
+        )
+        if wanted in row_keys:
+            return _source_cell(sheet.title, row, value_column), sheet.cell(row=row, column=value_column).value
+    return None
+
+
+def _find_roomy_special_source(
+    kpi_workbook,
+    metric_key: str,
+    month_key: tuple[int, int],
+) -> tuple[str, object, str] | None:
+    source_labels = {
+        label_key("Less: SG&A Expense (USD)"): ("LESS: SG&A EXPENSE", 7),
+        label_key("Net Profit Before Tax / (Loss)"): ("EBITDA", 7),
+        label_key("Less: Tax"): ("LESS: Income Tax", 7),
+        label_key("Net Profit / (Loss)"): ("NET PROFIT / (LOSS)", 7),
+    }
+    rule = source_labels.get(metric_key)
+    if rule is None:
+        return None
+
+    sheet = find_workbook_month_sheet(kpi_workbook, month_key)
+    if sheet is None:
+        return None
+
+    result = _find_sheet_label_cell_value(sheet, rule[0], rule[1])
+    if result is None:
+        return None
+    source, value = result
+    return source, value, "monthly tab"
+
+
 def _label_copy_normalization_rows(
     template_workbook,
     kpi_workbook,
@@ -500,7 +542,7 @@ def _label_copy_normalization_rows(
             confidence = 0
             note = "No matching source metric was found."
 
-            if profile.name == "bykea" and metric_key in {"driver incentives", "marketing"}:
+            if profile.name == "bykea" and metric_key in BYKEA_VISIBLE_SUMMARY_LABELS:
                 bykea_sources = get_bykea_visible_summary_sources(kpi_workbook, metric_key, month_key)
                 result = get_bykea_visible_summary_source(kpi_workbook, metric_key, month_key)
                 if result is not None and bykea_sources:
@@ -511,9 +553,9 @@ def _label_copy_normalization_rows(
                     )
                     status = "Auto-ready"
                     confidence = 100
-                    note = "Visible collapsed Bykea summary row."
+                    note = "Bykea summary-source rule."
                     if len(bykea_sources) > 1:
-                        note = "Visible collapsed Bykea summary rows combined for pre-2026 convention."
+                        note = "Bykea summary-source rows combined."
             elif metric_key in row_rules:
                 result = _find_row_rule_source(kpi_workbook, profile.name, row_rules[metric_key], month_key)
                 if result is not None:
@@ -528,6 +570,13 @@ def _label_copy_normalization_rows(
                     status = "Auto-ready"
                     confidence = 100
                     note = "Fixed monthly source position."
+            elif profile.name == "roomy":
+                result = _find_roomy_special_source(kpi_workbook, metric_key, month_key)
+                if result is not None:
+                    source, raw_value, conversion = result
+                    status = "Auto-ready"
+                    confidence = 100
+                    note = "Roomy monthly-tab rule."
             elif lookup_key in alias_values:
                 result = _find_label_source(source_matches, lookup_key, month_key)
                 if result is not None:
@@ -725,7 +774,7 @@ def build_normalization_review(
             "rows": [row.row()],
             "status_counts": _status_counts([row]),
             "blocked": True,
-            "model_status": "Not connected",
+            "model_status": "Validation checks will run after the template is readable.",
         }
 
     try:
@@ -768,5 +817,5 @@ def build_normalization_review(
         "rows": [row.row() for row in rows],
         "status_counts": counts,
         "blocked": counts["Missing"] > 0,
-        "model_status": "Normalization checks and approval memory are active. External AI suggestions are not connected yet.",
+        "model_status": "Validation checks and approval memory are active. Suggested mappings are shown for review before generation.",
     }
