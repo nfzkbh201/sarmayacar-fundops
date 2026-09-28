@@ -20,6 +20,12 @@ if str(monthly_reporting_root) not in sys.path:
     sys.path.insert(0, str(monthly_reporting_root))
 
 from monthly_reporting_page import render_monthly_reporting_page
+from quarterly_report import render_quarterly_report_page
+
+DASHBOARD_URL = os.environ.get(
+    "SARMAYACAR_DASHBOARD_URL",
+    "https://sarmayacar-dashboard.vercel.app/whats-new",
+).strip()
 
 st.set_page_config(
     page_title="Sarmayacar FundOps Dashboard",
@@ -28,6 +34,16 @@ st.set_page_config(
 
 st.title("Sarmayacar FundOps Dashboard")
 st.write("Upload updated files from the sidebar, or use the default project files.")
+
+with st.sidebar:
+    st.markdown("### Connected Dashboard")
+    st.link_button(
+        "Open Portfolio Dashboard",
+        DASHBOARD_URL,
+        use_container_width=True,
+    )
+    st.caption("Opens the Sarmayacar Vercel dashboard in a new tab.")
+    st.divider()
 
 investor_master = APP_ROOT / "Investor_Master" / "Copy of Investor_Details.xlsx"
 drawdown_file = APP_ROOT / "Inputs" / "SV-Drawdown (Mar 2026).XLSX"
@@ -184,8 +200,8 @@ st.sidebar.caption(source_label(uploaded_drawdown_file, drawdown_file))
 st.sidebar.caption(source_label(uploaded_contact_file, contact_file))
 st.sidebar.caption(source_label(uploaded_template_file, template_file))
 
-capital_calls_tab, distribution_notices_tab, monthly_reporting_tab = st.tabs(
-    ["Capital Calls", "Distribution Notices", "Monthly Reporting"]
+capital_calls_tab, distribution_notices_tab, monthly_reporting_tab, quarterly_report_tab = st.tabs(
+    ["Capital Calls", "Distribution Notices", "Monthly Reporting", "Quarterly Report"]
 )
 
 with capital_calls_tab:
@@ -1296,3 +1312,7 @@ with distribution_notices_tab:
 
 with monthly_reporting_tab:
     render_monthly_reporting_page()
+
+
+with quarterly_report_tab:
+    render_quarterly_report_page()
