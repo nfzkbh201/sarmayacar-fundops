@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import io
+import json
+import os
 import re
 import tempfile
+import ast
+import operator
 from calendar import month_abbr
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -10,14 +14,17 @@ from pathlib import Path
 from typing import Iterable
 
 from openpyxl import load_workbook
+from openpyxl.utils.cell import column_index_from_string, get_column_letter, range_boundaries
 from openpyxl.worksheet.worksheet import Worksheet
 import streamlit as st
 
 from monthly_reporting_automation import PROFILES, find_month_columns, workbook_sheet_name
+from monthly_reporting_page import QOQ_METHOD_MANUAL, _qoq_rows_for_workbook
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 QUARTERLY_OUTPUTS_DIR = PROJECT_ROOT / "Outputs" / "Quarterly Reports"
+DEFAULT_OPENAI_MODEL = "gpt-5-mini"
 
 MAX_BULLETS = 4
 MAX_BULLET_CHARS = 190
@@ -81,6 +88,7 @@ class CompanyReportData:
     description: str
     key_updates: tuple[str, ...]
     metrics: tuple[MetricRow, ...]
+    qoq_changes: tuple[dict[str, object], ...]
     warnings: tuple[str, ...]
 
 
@@ -208,8 +216,163 @@ def _metric_score(label: str) -> int:
     return 25 if len(label) <= 60 else 0
 
 
+_CELL_REF_RE = re.compile(r"(?<![A-Za-z0-9_])\$?([A-Z]{1,3})\$?([0-9]{1,7})(?![A-Za-z0-9_])")
+_CELL_REF_ONLY_RE = re.compile(r"^\$?([A-Z]{1,3})\$?([0-9]{1,7})$")
+_RANGE_REF_ONLY_RE = re.compile(
+    r"^\$?([A-Z]{1,3})\$?([0-9]{1,7}):\$?([A-Z]{1,3})\$?([0-9]{1,7})$"
+)
+
+
+def _safe_number_eval(expression: str) -> float | int | None:
+    operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+
+    def evaluate(node):
+        if isinstance(node, ast.Expression):
+            return evaluate(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return node.value
+        if isinstance(node, ast.BinOp) and type(node.op) in operators:
+            return operators[type(node.op)](evaluate(node.left), evaluate(node.right))
+        if isinstance(node, ast.UnaryOp) and type(node.op) in operators:
+            return operators[type(node.op)](evaluate(node.operand))
+        raise ValueError("Unsupported formula expression")
+
+    if not re.fullmatch(r"[0-9eE.+\-*/() ]+", expression):
+        return None
+    try:
+        result = evaluate(ast.parse(expression, mode="eval"))
+    except (SyntaxError, ValueError, ZeroDivisionError, TypeError):
+        return None
+    if isinstance(result, (int, float)) and not isinstance(result, bool):
+        return result
+    return None
+
+
+def _resolved_formula_cell_value(
+    data_sheet: Worksheet,
+    formula_sheet: Worksheet,
+    row: int,
+    col: int,
+    cache: dict[tuple[int, int], object],
+    stack: set[tuple[int, int]],
+) -> object:
+    key = (row, col)
+    if key in cache:
+        return cache[key]
+
+    data_value = data_sheet.cell(row=row, column=col).value
+    if _is_metric_value(data_value):
+        cache[key] = data_value
+        return data_value
+
+    formula_value = formula_sheet.cell(row=row, column=col).value
+    if _is_metric_value(formula_value):
+        cache[key] = formula_value
+        return formula_value
+    if not (isinstance(formula_value, str) and formula_value.startswith("=")):
+        cache[key] = data_value
+        return data_value
+    if key in stack:
+        return None
+
+    stack.add(key)
+    try:
+        resolved = _evaluate_simple_formula(data_sheet, formula_sheet, formula_value, cache, stack)
+    finally:
+        stack.remove(key)
+    cache[key] = resolved
+    return resolved
+
+
+def _sum_formula_argument(
+    data_sheet: Worksheet,
+    formula_sheet: Worksheet,
+    argument: str,
+    cache: dict[tuple[int, int], object],
+    stack: set[tuple[int, int]],
+) -> float | int | None:
+    argument = argument.strip()
+    range_match = _RANGE_REF_ONLY_RE.fullmatch(argument.replace("$", ""))
+    if range_match:
+        min_col, min_row, max_col, max_row = range_boundaries(argument.replace("$", ""))
+        total = 0
+        found = False
+        for row in range(min_row, max_row + 1):
+            for col in range(min_col, max_col + 1):
+                value = _resolved_formula_cell_value(data_sheet, formula_sheet, row, col, cache, stack)
+                if _is_metric_value(value):
+                    total += value
+                    found = True
+        return total if found else None
+
+    cell_match = _CELL_REF_ONLY_RE.fullmatch(argument.replace("$", ""))
+    if cell_match:
+        col = column_index_from_string(cell_match.group(1))
+        row = int(cell_match.group(2))
+        value = _resolved_formula_cell_value(data_sheet, formula_sheet, row, col, cache, stack)
+        return value if _is_metric_value(value) else 0
+
+    return _evaluate_simple_formula(data_sheet, formula_sheet, f"={argument}", cache, stack)
+
+
+def _evaluate_simple_formula(
+    data_sheet: Worksheet,
+    formula_sheet: Worksheet,
+    formula: str,
+    cache: dict[tuple[int, int], object],
+    stack: set[tuple[int, int]],
+) -> float | int | None:
+    expression = formula.strip()[1:].replace("$", "")
+    if not expression or "[" in expression or "!" in expression:
+        return None
+    if "=" in expression:
+        return None
+
+    direct_cell = _CELL_REF_ONLY_RE.fullmatch(expression)
+    if direct_cell:
+        col = column_index_from_string(direct_cell.group(1))
+        row = int(direct_cell.group(2))
+        value = _resolved_formula_cell_value(data_sheet, formula_sheet, row, col, cache, stack)
+        return value if _is_metric_value(value) else None
+
+    def replace_sum(match: re.Match) -> str:
+        pieces = [piece.strip() for piece in match.group(1).split(",")]
+        total = 0
+        found = False
+        for piece in pieces:
+            value = _sum_formula_argument(data_sheet, formula_sheet, piece, cache, stack)
+            if _is_metric_value(value):
+                total += value
+                found = True
+        return str(total if found else 0)
+
+    previous = None
+    while previous != expression:
+        previous = expression
+        expression = re.sub(r"SUM\(([^()]+)\)", replace_sum, expression, flags=re.IGNORECASE)
+
+    expression = re.sub(r"(\d+(?:\.\d+)?)%", r"(\1/100)", expression)
+
+    def replace_cell(match: re.Match) -> str:
+        col = column_index_from_string(match.group(1))
+        row = int(match.group(2))
+        value = _resolved_formula_cell_value(data_sheet, formula_sheet, row, col, cache, stack)
+        return str(value if _is_metric_value(value) else 0)
+
+    expression = _CELL_REF_RE.sub(replace_cell, expression)
+    return _safe_number_eval(expression)
+
+
 def _extract_metrics(
     sheet: Worksheet,
+    formula_sheet: Worksheet,
     months: tuple[tuple[int, int], ...],
 ) -> tuple[tuple[MetricRow, ...], tuple[str, ...]]:
     warnings: list[str] = []
@@ -224,6 +387,7 @@ def _extract_metrics(
     first_month_col = min(month_cols.values())
     candidates: list[tuple[int, int, MetricRow]] = []
     seen_labels: set[str] = set()
+    formula_cache: dict[tuple[int, int], object] = {}
     for row in range(1, min(sheet.max_row, 130) + 1):
         label = _label_for_row(sheet, row, first_month_col)
         score = _metric_score(label)
@@ -232,7 +396,10 @@ def _extract_metrics(
         label_key = _normalise(label)
         if label_key in seen_labels:
             continue
-        values = {month: sheet.cell(row=row, column=col).value for month, col in month_cols.items()}
+        values = {
+            month: _resolved_formula_cell_value(sheet, formula_sheet, row, col, formula_cache, set())
+            for month, col in month_cols.items()
+        }
         if not any(_is_metric_value(value) for value in values.values()):
             continue
         seen_labels.add(label_key)
@@ -241,7 +408,8 @@ def _extract_metrics(
     candidates.sort()
     selected = tuple(metric for _score, _row, metric in candidates[:7])
     if not selected:
-        warnings.append("No usable financial or operating metrics found.")
+        period = ", ".join(f"{month_abbr[month]} {str(year)[-2:]}" for year, month in months)
+        warnings.append(f"No usable actual metric values found for {period}. Check that the Monthly Reporting workbook has populated Actual columns for this quarter.")
     else:
         for metric in selected:
             missing_values = [month for month in months if not _is_metric_value(metric.values.get(month))]
@@ -249,6 +417,25 @@ def _extract_metrics(
                 warnings.append(f"Metric '{metric.label}' has missing values for part of the quarter.")
                 break
     return selected, tuple(warnings)
+
+
+def _top_qoq_changes(
+    qoq_rows: list[dict[str, object]],
+    company: str,
+    limit: int = 6,
+) -> tuple[dict[str, object], ...]:
+    company_rows = [row for row in qoq_rows if row.get("Company") == company]
+
+    def score(row: dict[str, object]) -> float:
+        qoq_pct = row.get("QoQ %")
+        change = row.get("Change")
+        if isinstance(qoq_pct, (int, float)):
+            return abs(float(qoq_pct))
+        if isinstance(change, (int, float)):
+            return abs(float(change))
+        return 0.0
+
+    return tuple(sorted(company_rows, key=score, reverse=True)[:limit])
 
 
 def _text_warnings(description: str, updates: tuple[str, ...]) -> list[str]:
@@ -274,10 +461,21 @@ def parse_monthly_reporting_workbook(
     months: tuple[tuple[int, int], ...],
 ) -> tuple[CompanyReportData, ...]:
     workbook = load_workbook(workbook_path, data_only=True)
+    formula_workbook = load_workbook(workbook_path, data_only=False)
+    qoq_rows, qoq_warnings = _qoq_rows_for_workbook(
+        workbook_path=workbook_path,
+        months=months,
+        selected_profile_names=list(PROFILES.keys()),
+        calculation_method=QOQ_METHOD_MANUAL,
+    )
     companies: list[CompanyReportData] = []
     try:
         for profile_name, profile in PROFILES.items():
-            company_warnings: list[str] = []
+            company_warnings: list[str] = [
+                warning
+                for warning in qoq_warnings
+                if warning.startswith(f"{profile.display_name}:")
+            ]
             sheet_name = workbook_sheet_name(workbook, profile.report_sheet)
             if sheet_name is None:
                 companies.append(
@@ -288,15 +486,17 @@ def parse_monthly_reporting_workbook(
                         description="",
                         key_updates=(),
                         metrics=(),
+                        qoq_changes=(),
                         warnings=(f"Missing workbook sheet '{profile.report_sheet}'.",),
                     )
                 )
                 continue
 
             sheet = workbook[sheet_name]
+            formula_sheet = formula_workbook[sheet_name]
             description = _extract_description(sheet, profile.display_name)
             key_updates = _extract_key_updates(sheet)
-            metrics, metric_warnings = _extract_metrics(sheet, months)
+            metrics, metric_warnings = _extract_metrics(sheet, formula_sheet, months)
             company_warnings.extend(_text_warnings(description, key_updates))
             company_warnings.extend(metric_warnings)
             companies.append(
@@ -307,11 +507,13 @@ def parse_monthly_reporting_workbook(
                     description=description,
                     key_updates=key_updates,
                     metrics=metrics,
+                    qoq_changes=_top_qoq_changes(qoq_rows, profile.display_name),
                     warnings=tuple(company_warnings),
                 )
             )
     finally:
         workbook.close()
+        formula_workbook.close()
     return tuple(companies)
 
 
@@ -329,6 +531,293 @@ def _format_metric_value(label: str, value: object) -> str:
     if float(value).is_integer():
         return f"{int(value):,}"
     return f"{value:.1f}"
+
+
+def _openai_setting(name: str, default: str | None = None) -> str | None:
+    try:
+        value = st.secrets.get(name)  # type: ignore[attr-defined]
+    except Exception:
+        value = None
+    if value:
+        return str(value)
+    return os.environ.get(name, default)
+
+
+def _openai_api_key_configured() -> bool:
+    return bool(_openai_setting("OPENAI_API_KEY"))
+
+
+def _metric_context(company: CompanyReportData, months: tuple[tuple[int, int], ...]) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for metric in company.metrics[:8]:
+        values = {
+            f"{month_abbr[month]} {str(year)[-2:]}": _format_metric_value(metric.label, metric.values.get((year, month)))
+            for year, month in months
+        }
+        numeric_values = [
+            metric.values.get(month)
+            for month in months
+            if _is_metric_value(metric.values.get(month))
+        ]
+        change = None
+        if len(numeric_values) >= 2 and numeric_values[0] not in (0, None):
+            try:
+                change = (numeric_values[-1] / numeric_values[0]) - 1
+            except ZeroDivisionError:
+                change = None
+        rows.append(
+            {
+                "metric": metric.label,
+                "values": values,
+                "quarter_change": f"{change * 100:.1f}%" if isinstance(change, (int, float)) else None,
+            }
+        )
+    return rows
+
+
+def _format_qoq_value(value: object, percent: bool = False) -> str | None:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
+    if percent:
+        return f"{value:.1f}%"
+    return _format_metric_value("", value)
+
+
+def _qoq_context(company: CompanyReportData) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for row in company.qoq_changes:
+        rows.append(
+            {
+                "metric": row.get("Metric"),
+                "method": row.get("Method"),
+                "current_quarter": _format_qoq_value(row.get("Current quarter")),
+                "previous_quarter": _format_qoq_value(row.get("Previous quarter")),
+                "change": _format_qoq_value(row.get("Change")),
+                "qoq_percent": _format_qoq_value(row.get("QoQ %"), percent=True),
+            }
+        )
+    return rows
+
+
+def _companies_for_ai(
+    companies: tuple[CompanyReportData, ...],
+    months: tuple[tuple[int, int], ...],
+) -> list[dict[str, object]]:
+    return [
+        {
+            "company": company.company,
+            "description": company.description,
+            "existing_key_updates": list(company.key_updates),
+            "metrics": _metric_context(company, months),
+            "qoq_changes": _qoq_context(company),
+            "warnings": list(company.warnings),
+        }
+        for company in companies
+        if company.sheet_name
+    ]
+
+
+def _normalise_ai_updates(value: object) -> str:
+    if isinstance(value, str):
+        lines = value.splitlines()
+    elif isinstance(value, list):
+        lines = [str(item) for item in value]
+    else:
+        return ""
+    return "\n".join(_strip_bullet(line) for line in lines if _strip_bullet(line))[:1200]
+
+
+def _draft_key_updates_with_ai(
+    companies: tuple[CompanyReportData, ...],
+    months: tuple[tuple[int, int], ...],
+) -> tuple[dict[str, str], str | None]:
+    try:
+        from openai import OpenAI
+    except ImportError:
+        return {}, "The OpenAI Python package is not installed. Add openai to requirements.txt and redeploy."
+
+    api_key = _openai_setting("OPENAI_API_KEY")
+    if not api_key:
+        return {}, "OPENAI_API_KEY is not configured in Streamlit secrets or environment variables."
+
+    model = _openai_setting("OPENAI_MODEL", DEFAULT_OPENAI_MODEL) or DEFAULT_OPENAI_MODEL
+    period = quarter_label(months)
+    payload = {
+        "period": period,
+        "companies": _companies_for_ai(companies, months),
+    }
+    client = OpenAI(api_key=api_key)
+    prompt = (
+        "You are drafting Sarmayacar quarterly investor report key updates from a Monthly Reporting workbook.\n"
+        "Use only the supplied company descriptions, existing updates, warnings, and metric values.\n"
+        "Do not invent numbers, customer names, fundraise details, causes, or forward-looking claims.\n"
+        "For each company, write 2 to 4 concise bullets. Prefer the supplied QoQ changes when available, then the quarter metrics.\n"
+        "If the metrics are missing, write one conservative bullet based on existing updates and one bullet saying data is pending review.\n"
+        "Return only valid JSON with this schema: {\"companies\":[{\"company\":\"...\",\"key_updates\":[\"...\",\"...\"]}]}.\n\n"
+        f"Workbook context:\n{json.dumps(payload, ensure_ascii=False)}"
+    )
+
+    try:
+        response = client.responses.create(
+            model=model,
+            input=prompt,
+            store=False,
+        )
+    except Exception as exc:
+        return {}, f"AI drafting failed: {exc}"
+
+    output_text = getattr(response, "output_text", "") or ""
+    try:
+        parsed = json.loads(output_text)
+    except json.JSONDecodeError:
+        return {}, "AI drafting returned text that was not valid JSON. Try again or use a different OPENAI_MODEL."
+
+    drafts: dict[str, str] = {}
+    for item in parsed.get("companies", []):
+        if not isinstance(item, dict):
+            continue
+        company = str(item.get("company", "")).strip()
+        updates = _normalise_ai_updates(item.get("key_updates", []))
+        if company and updates:
+            drafts[company] = updates
+    return drafts, None
+
+
+def _apply_update_drafts(
+    rows: list[dict[str, object]],
+    drafts: dict[str, str],
+    replace_existing: bool,
+) -> list[dict[str, object]]:
+    updated: list[dict[str, object]] = []
+    for row in rows:
+        company = str(row.get("Company", ""))
+        draft = drafts.get(company)
+        if not draft:
+            updated.append(row)
+            continue
+        next_row = dict(row)
+        existing = str(next_row.get("Key updates", "")).strip()
+        next_row["Key updates"] = draft if replace_existing or not existing else f"{existing}\n{draft}"
+        updated.append(next_row)
+    return updated
+
+
+def _slug(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+    return slug or "company"
+
+
+def _review_updates(row: dict[str, object]) -> list[str]:
+    return [
+        _strip_bullet(line)
+        for line in str(row.get("Key updates", "")).replace("\r", "\n").splitlines()
+        if _strip_bullet(line)
+    ][:MAX_BULLETS]
+
+
+def _figma_metric_rows(
+    company: CompanyReportData,
+    months: tuple[tuple[int, int], ...],
+) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for index, metric in enumerate(company.metrics[:7], start=1):
+        rows.append(
+            {
+                "index": index,
+                "label": metric.label,
+                "values": [
+                    {
+                        "month": f"{month_abbr[month]} {str(year)[-2:]}",
+                        "value": _format_metric_value(metric.label, metric.values.get((year, month))),
+                    }
+                    for year, month in months
+                ],
+            }
+        )
+    return rows
+
+
+def _figma_qoq_rows(company: CompanyReportData) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for index, row in enumerate(company.qoq_changes[:6], start=1):
+        rows.append(
+            {
+                "index": index,
+                "metric": row.get("Metric") or "",
+                "method": row.get("Method") or "",
+                "current_quarter": _format_qoq_value(row.get("Current quarter")) or "",
+                "previous_quarter": _format_qoq_value(row.get("Previous quarter")) or "",
+                "change": _format_qoq_value(row.get("Change")) or "",
+                "qoq_percent": _format_qoq_value(row.get("QoQ %"), percent=True) or "",
+            }
+        )
+    return rows
+
+
+def build_figma_data_pack(
+    companies: tuple[CompanyReportData, ...],
+    review_rows: list[dict[str, object]],
+    months: tuple[tuple[int, int], ...],
+    warnings: list[dict[str, str]],
+) -> dict[str, object]:
+    companies_by_name = {company.company: company for company in companies}
+    report_companies: list[dict[str, object]] = []
+    for row in review_rows:
+        if not row.get("Include", True):
+            continue
+        company_name = str(row.get("Company", "")).strip()
+        company = companies_by_name.get(company_name)
+        if company is None:
+            continue
+        report_companies.append(
+            {
+                "name": company.company,
+                "slug": _slug(company.company),
+                "description": str(row.get("Description", "")).strip(),
+                "key_updates": _review_updates(row),
+                "notes": str(row.get("Notes", "")).strip(),
+                "metrics": _figma_metric_rows(company, months),
+                "qoq_changes": _figma_qoq_rows(company),
+                "warnings": [
+                    warning["Warning"]
+                    for warning in warnings
+                    if warning.get("Company") == company.company
+                ],
+            }
+        )
+
+    return {
+        "schema_version": "sarmayacar.quarterly_report.v1",
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "report": {
+            "quarter": quarter_label(months),
+            "months": [f"{month_abbr[month]} {str(year)[-2:]}" for year, month in months],
+            "source": "Sarmayacar FundOps Streamlit Quarterly Report tab",
+        },
+        "figma": {
+            "template_frame": "Company Page Template",
+            "layer_naming": {
+                "company.name": "Company name text layer",
+                "company.description": "Company description text layer",
+                "company.update_1": "First update bullet text layer",
+                "company.update_2": "Second update bullet text layer",
+                "company.update_3": "Third update bullet text layer",
+                "company.update_4": "Fourth update bullet text layer",
+                "metric_1.label": "Metric label text layer",
+                "metric_1.month_1": "Metric first month value",
+                "metric_1.month_2": "Metric second month value",
+                "metric_1.month_3": "Metric third month value",
+                "qoq_1.metric": "QoQ metric name",
+                "qoq_1.percent": "QoQ percentage change",
+                "notes.disclaimer": "Notes or disclaimer text layer",
+            },
+        },
+        "companies": report_companies,
+    }
+
+
+def _json_download_bytes(payload: dict[str, object]) -> bytes:
+    return json.dumps(payload, indent=2, ensure_ascii=False).encode("utf-8")
 
 
 def _add_textbox(slide, x, y, w, h, text, font_size=12, bold=False, color="1F2937"):
@@ -586,24 +1075,68 @@ def render_quarterly_report_page() -> None:
             companies = parse_monthly_reporting_workbook(workbook_path, months)
 
     parsed_count = sum(1 for company in companies if company.sheet_name)
+    qoq_signal_count = sum(len(company.qoq_changes) for company in companies)
     warning_rows = _warning_rows(companies)
 
     with st.container(border=True):
         st.subheader("Workbook scan")
-        metric_cols = st.columns(3)
+        metric_cols = st.columns(4)
         metric_cols[0].metric("Company sheets found", parsed_count)
         metric_cols[1].metric("Companies in scope", len(companies))
-        metric_cols[2].metric("Warnings", len(warning_rows))
+        metric_cols[2].metric("QoQ signals", qoq_signal_count)
+        metric_cols[3].metric("Warnings", len(warning_rows))
         if warning_rows:
+            st.caption("Warnings are review flags and do not block PPTX generation.")
             st.dataframe(warning_rows, hide_index=True, width="stretch")
         else:
             st.success("No missing-data or overflow warnings detected.")
 
     with st.container(border=True):
         st.subheader("Human review")
-        st.caption("Edit text only. Metrics are read from the workbook and placed into fixed slide boxes.")
+        st.caption("Generate draft key updates from workbook metrics, then edit text before creating the fixed-format PPTX.")
+        review_state_key = f"quarterly_report_rows_{quarter_label(months)}_{monthly_report_file.name}"
+        base_review_rows = _review_rows(companies)
+        if review_state_key not in st.session_state:
+            st.session_state[review_state_key] = base_review_rows
+
+        ai_cols = st.columns([1, 1, 2])
+        with ai_cols[0]:
+            replace_ai_updates = st.checkbox(
+                "Replace existing updates",
+                value=True,
+                key=f"{review_state_key}_replace_ai_updates",
+            )
+        with ai_cols[1]:
+            draft_with_ai = st.button(
+                "Draft key updates with AI",
+                disabled=not _openai_api_key_configured(),
+                width="stretch",
+                key=f"{review_state_key}_draft_ai",
+            )
+        with ai_cols[2]:
+            if _openai_api_key_configured():
+                st.caption(f"AI model: `{_openai_setting('OPENAI_MODEL', DEFAULT_OPENAI_MODEL)}`")
+            else:
+                st.caption("Add `OPENAI_API_KEY` in Streamlit secrets to enable AI drafting.")
+
+        if draft_with_ai:
+            with st.spinner("Drafting company key updates from workbook metrics"):
+                drafts, error = _draft_key_updates_with_ai(companies, months)
+            if error:
+                st.error(error)
+            elif not drafts:
+                st.warning("AI did not return any usable company updates.")
+            else:
+                st.session_state[review_state_key] = _apply_update_drafts(
+                    st.session_state[review_state_key],
+                    drafts,
+                    replace_existing=replace_ai_updates,
+                )
+                st.success(f"Drafted key updates for {len(drafts)} companies. Review and edit before generating PPTX.")
+                st.rerun()
+
         edited_rows = st.data_editor(
-            _review_rows(companies),
+            st.session_state[review_state_key],
             hide_index=True,
             width="stretch",
             disabled=["Company"],
@@ -619,9 +1152,32 @@ def render_quarterly_report_page() -> None:
     edited_warnings = _warning_rows(companies, edited_rows)
     if edited_warnings:
         with st.expander("Warnings after edits", expanded=True):
+            st.caption("Warnings are review flags and do not block PPTX generation.")
             st.dataframe(edited_warnings, hide_index=True, width="stretch")
 
     included_count = sum(1 for row in edited_rows if row.get("Include"))
+    figma_data_pack = build_figma_data_pack(
+        companies=companies,
+        review_rows=edited_rows,
+        months=months,
+        warnings=edited_warnings,
+    )
+
+    with st.container(border=True):
+        st.subheader("Figma handoff")
+        st.caption("Download this JSON and import it with the private Figma plugin inside the quarterly report template.")
+        handoff_cols = st.columns(3)
+        handoff_cols[0].metric("Included companies", included_count)
+        handoff_cols[1].metric("QoQ signals", sum(len(company.qoq_changes) for company in companies))
+        handoff_cols[2].metric("Plugin schema", figma_data_pack["schema_version"])
+        st.download_button(
+            "Download Figma data pack",
+            data=_json_download_bytes(figma_data_pack),
+            file_name=f"Sarmayacar {quarter_label(months)} Figma Data Pack.json",
+            mime="application/json",
+            width="stretch",
+        )
+
     generate = st.button(
         "Generate company pages PPTX",
         type="primary",
