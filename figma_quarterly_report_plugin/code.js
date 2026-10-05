@@ -381,15 +381,11 @@ async function createFinancialExhibitPages(financialExhibits, startX, startY) {
 }
 
 async function findOrCreateCompanyTemplate() {
-  const selection = figma.currentPage.selection;
-  if (selection.length === 1 && ["FRAME", "COMPONENT", "INSTANCE"].includes(selection[0].type)) {
-    return selection[0];
-  }
   const existing = figma.currentPage.findOne((node) => node.name === "Company Page Template");
   if (existing && ["FRAME", "COMPONENT", "INSTANCE"].includes(existing.type)) {
     return existing;
   }
-  return await createCompanyTemplate(0, 0);
+  return await createCompanyTemplate(PAGE_W + 90, PAGE_H + 90);
 }
 
 async function importCompanies(data) {
