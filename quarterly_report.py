@@ -99,6 +99,169 @@ METRIC_PRIORITIES = (
     ("teacher", 64),
 )
 
+MAX_FIGMA_METRIC_ROWS = 18
+
+COMPANY_METRIC_MAP: dict[str, tuple[tuple[str, str], ...]] = {
+    "ABHI": (
+        ("NTV", "NTV"),
+        ("Net Revenue", "Net Revenue"),
+        ("COS", "COS"),
+        ("Gross Profit", "Gross Profit"),
+        ("Other Income", "Other Income"),
+        ("Salaries", "Salaries"),
+        ("Tech Development", "Tech Development"),
+        ("Marketing", "Marketing"),
+        ("SG&A", "SG&A"),
+        ("Other Expenses (inc.one time)", "Other Expenses"),
+        ("Total Expenses", "Total Expenses"),
+        ("Capex", "Capex"),
+        ("Net Burn", "Net Burn"),
+        ("Transactions (EWA + Payroll)", "Transactions (EWA + Payroll)"),
+    ),
+    "SimPaisa": (
+        ("Total GTV", "GTV"),
+        ("Net Revenue", "Net Revenue"),
+        ("Salaries", "Salaries"),
+        ("SG&A", "SG&A"),
+        ("Business Development", "Business Development"),
+        ("Professional Fees", "Professional Fees"),
+        ("Other expenses", "Other expenses"),
+        ("Total Expenses", "Total Expenses"),
+        ("Net Income (loss)", "Net Burn / Income"),
+        ("Wallet Transactions", "Wallet Transactions"),
+        ("Telco Transactions", "Telco Transactions"),
+        ("Card Transactions", "Card Transactions"),
+        ("Disbursement Transactions", "Disbursement Transactions"),
+        ("Total No. of Transactions", "Total No. of Transactions"),
+    ),
+    "Bykea": (
+        ("GTV", "GTV"),
+        ("Net Revenue", "Net Revenue"),
+        ("Driver Incentives", "Driver Incentives"),
+        ("Marketing", "Marketing"),
+        ("Tech", "Tech"),
+        ("Overheads", "Overheads"),
+        ("Net Burn", "Net Burn"),
+        ("Bookings / day", "Bookings / day"),
+        ("Net Tranactions/day", "Net Transactions / day"),
+        ("Fulfilment", "Fulfilment"),
+        ("MAU (Monthly Active Users) Net", "MAU"),
+        ("MAD (Monthly Active Drivers)", "MAD"),
+    ),
+    "Dot & Line": (
+        ("GMV", "GMV"),
+        ("Net revenue", "Net Revenue"),
+        ("Other revenue", "Other Revenue"),
+        ("Salaries", "Salaries"),
+        ("SG&A", "SG&A"),
+        ("Marketing", "Marketing"),
+        ("Other expenses", "Other Expenses"),
+        ("Total Expenses", "Total Expenses"),
+        ("Net Income (loss)", "Net Burn"),
+        ("Total Students", "Total Students"),
+        ("Total Teacher Partners", "Total Teacher Partners"),
+    ),
+    "Procheck": (
+        ("Revenue (New Lines/Codes)", "Revenue (New lines/codes)"),
+        ("Revenue (Recurring Lines/Codes)", "Revenue (Recurring lines/codes)"),
+        ("Total Revenue", "Total Revenue"),
+        ("Cost of Sales", "Deployment cost"),
+        ("Gross Margin", "Gross Profit"),
+        ("Salaries", "Salaries"),
+        ("SG&A", "SG&A"),
+        ("Software Development Cost", "Software Development Cost"),
+        ("Other Expenses", "Other Expenses"),
+        ("Total Expenses", "Total Expenses"),
+        ("Total Profit (Loss) / Burn", "Net Burn"),
+        ("Codes Generated (TnT)", "Codes Generated (TnT)"),
+        ("No. of Lines (OEE)", "No. of Lines (OEE)"),
+    ),
+    "Roomy": (
+        ("Revenue - Total", "Total Revenue"),
+        ("Gross Profit", "Gross Profit"),
+        ("Salaries & Wages", "Salaries"),
+        ("Sales & Marketing", "Sales & Marketing"),
+        ("Rent & CAM / Renovation Costs", "Rent & CAM / Renovation Costs"),
+        ("Admin & General", "Admin & General"),
+        ("Total Operating Expenses", "Total Operating Expenses"),
+        ("Net Burn", "Net Burn"),
+        ("Operational Rooms", "Operational Rooms"),
+        ("Occupancy %", "Occupancy Rate (%)"),
+        ("ADR", "Average Daily Rent ($)"),
+    ),
+    "Oladoc": (
+        ("GMV (USD)", "GMV (USD)"),
+        ("NMV (USD)", "NMV (USD)"),
+        ("Total Revenue", "Total Revenue"),
+        ("Gross Profit", "Gross Profit"),
+        ("Salaries", "Salaries"),
+        ("Marketing", "Marketing"),
+        ("Tech - Subscriptions", "Tech - Subscriptions"),
+        ("G&A", "G&A"),
+        ("Others", "Others"),
+        ("Total Expenses", "Total Expenses"),
+        ("Net Burn", "Net Burn"),
+        ("Total Bookings", "Total Bookings"),
+        ("Billed Bookings (0nline)", "Billed Bookings (Online)"),
+        ("Total Active Doctors", "Total Active Doctors"),
+    ),
+    "Revolving Games": (
+        ("Revenue", "Revenue"),
+        ("Operations and BD", "Operations"),
+        ("SG&A", "SG&A"),
+        ("Marketing", "Marketing"),
+        ("Software and Servers", "Software and Servers"),
+        ("Other expenses", "Other expenses"),
+        ("Total Expenses", "Total Expenses"),
+        ("Net Income (loss)", "Net Burn"),
+    ),
+    "Tapmad": (
+        ("Gross Revenue", "Gross Revenue"),
+        ("Net Revenue", "Net Revenue"),
+        ("Cost of Sales & Services", "COS"),
+        ("Gross Profit", "Gross Profit"),
+        ("Salaries & Wages (incl. bonuses/perks)", "Salaries"),
+        ("SG&A (Rent, utilities, office expenses)", "SG&A"),
+        ("Marketing", "Marketing"),
+        ("Professional & consultancy fee", "Professional / Consultancy Fee"),
+        ("Other expenses", "Other"),
+        ("OPEX", "Total Operating Expenses"),
+        ("CAPEX", "CAPEX"),
+        ("Net Profit / (Loss)", "Net Profit / (Loss)"),
+        ("Subscriptions", "Subscriptions"),
+        ("Monthly Active Users (MAUs)", "Monthly Active Users (MAUs)"),
+    ),
+    "Jiye Technologies": (
+        ("NMV (USD)", "NMV (USD)"),
+        ("Net Revenue", "Net Revenue"),
+        ("Gross Profit", "Gross Profit"),
+        ("Gross Margin", "Gross Margin"),
+        ("Salaries", "Salaries"),
+        ("Tech", "Tech"),
+        ("Marketing", "Marketing"),
+        ("Others", "Other Expenses"),
+        ("Total Expenses", "Total Expenses"),
+        ("Net Burn", "Net Burn"),
+        ("Net Orders Delivered", "Net Orders Delivered"),
+        ("AOV", "AOV"),
+        ("Total Customers", "Total Customers"),
+        ("New Customers", "New Customers"),
+    ),
+    "OneLoad": (
+        ("GMV - Total", "GMV"),
+        ("Net Revenue - Total", "Net Revenue"),
+        ("Variable Costs", "Variable costs"),
+        ("Gross Profit", "Gross Profit"),
+        ("Salaries", "Salaries"),
+        ("SG&A", "SG&A"),
+        ("Other Expenses", "Other Expenses"),
+        ("Total Operating Expenses", "Total Operating Expenses"),
+        ("Net Burn", "Net Burn"),
+        ("Active Retailers", "Active Retailers"),
+        ("Total No. of Transactions", "No. of Transactions"),
+    ),
+}
+
 
 @dataclass(frozen=True)
 class MetricRow:
@@ -243,9 +406,19 @@ def _extract_key_updates(sheet: Worksheet) -> tuple[str, ...]:
 def _label_for_row(sheet: Worksheet, row: int, first_month_col: int) -> str:
     for col in range(max(1, first_month_col - 6), 0, -1):
         text = _cell_text(sheet.cell(row=row, column=col).value)
-        if text:
+        if text and not text.startswith("#"):
             return text
     return ""
+
+
+def _metric_label_rows(sheet: Worksheet, first_month_col: int, max_row: int = 160) -> dict[str, int]:
+    rows: dict[str, int] = {}
+    for row in range(1, min(sheet.max_row, max_row) + 1):
+        label = _label_for_row(sheet, row, first_month_col)
+        key = _normalise(label)
+        if label and key not in rows:
+            rows[key] = row
+    return rows
 
 
 def _is_metric_value(value: object) -> bool:
@@ -424,6 +597,7 @@ def _extract_metrics(
     sheet: Worksheet,
     formula_sheet: Worksheet,
     months: tuple[tuple[int, int], ...],
+    company: str | None = None,
 ) -> tuple[tuple[MetricRow, ...], tuple[str, ...]]:
     warnings: list[str] = []
     month_cols = find_month_columns(sheet, months)
@@ -435,9 +609,45 @@ def _extract_metrics(
         return (), tuple(warnings)
 
     first_month_col = min(month_cols.values())
+    formula_cache: dict[tuple[int, int], object] = {}
+    metric_map = COMPANY_METRIC_MAP.get(company or "")
+    if metric_map:
+        label_rows = _metric_label_rows(sheet, first_month_col)
+        selected: list[MetricRow] = []
+        missing_labels: list[str] = []
+        empty_value_labels: list[str] = []
+        for source_label, display_label in metric_map:
+            row = label_rows.get(_normalise(source_label))
+            if row is None:
+                missing_labels.append(source_label)
+                continue
+            values = {
+                month: _resolved_formula_cell_value(sheet, formula_sheet, row, col, formula_cache, set())
+                for month, col in month_cols.items()
+            }
+            if not any(_is_metric_value(value) for value in values.values()):
+                empty_value_labels.append(display_label)
+            selected.append(MetricRow(label=display_label, values=values))
+        if missing_labels:
+            missing = ", ".join(missing_labels[:4])
+            if len(missing_labels) > 4:
+                missing += f", +{len(missing_labels) - 4} more"
+            warnings.append(f"Configured metric labels missing from workbook: {missing}.")
+        if empty_value_labels:
+            empty = ", ".join(empty_value_labels[:4])
+            if len(empty_value_labels) > 4:
+                empty += f", +{len(empty_value_labels) - 4} more"
+            warnings.append(f"Configured metric rows have no usable values for this period: {empty}.")
+        if selected:
+            for metric in selected:
+                missing_values = [month for month in months if not _is_metric_value(metric.values.get(month))]
+                if missing_values:
+                    warnings.append(f"Metric '{metric.label}' has missing values for part of the quarter.")
+                    break
+            return tuple(selected), tuple(warnings)
+
     candidates: list[tuple[int, int, MetricRow]] = []
     seen_labels: set[str] = set()
-    formula_cache: dict[tuple[int, int], object] = {}
     for row in range(1, min(sheet.max_row, 130) + 1):
         label = _label_for_row(sheet, row, first_month_col)
         score = _metric_score(label)
@@ -548,7 +758,7 @@ def parse_monthly_reporting_workbook(
             formula_sheet = formula_workbook[sheet_name]
             description = _extract_description(sheet, profile.display_name)
             key_updates = _extract_key_updates(sheet)
-            metrics, metric_warnings = _extract_metrics(sheet, formula_sheet, metric_months)
+            metrics, metric_warnings = _extract_metrics(sheet, formula_sheet, metric_months, profile.display_name)
             company_warnings.extend(_text_warnings(description, key_updates))
             company_warnings.extend(metric_warnings)
             companies.append(
@@ -977,7 +1187,7 @@ def _figma_metric_rows(
     months: tuple[tuple[int, int], ...],
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    for index, metric in enumerate(company.metrics[:7], start=1):
+    for index, metric in enumerate(company.metrics[:MAX_FIGMA_METRIC_ROWS], start=1):
         rows.append(
             {
                 "index": index,
@@ -1031,6 +1241,23 @@ def _format_exhibit_value(value: object) -> str:
     return str(value).strip()
 
 
+def _date_columns_in_range(sheet: Worksheet, row: int, start_col: int, end_col: int) -> list[tuple[int, str]]:
+    date_cols: list[tuple[int, str]] = []
+    for col in range(start_col, min(sheet.max_column, end_col) + 1):
+        label = _format_exhibit_header(sheet.cell(row=row, column=col).value)
+        if label:
+            date_cols.append((col, label))
+    return date_cols
+
+
+def _financial_label(sheet: Worksheet, row: int, label_cols: Iterable[int]) -> str:
+    for col in label_cols:
+        text = _cell_text(sheet.cell(row=row, column=col).value)
+        if text:
+            return text
+    return ""
+
+
 def _financial_sheet_for_months(workbook, months: tuple[tuple[int, int], ...]) -> str | None:
     if not months:
         return None
@@ -1062,43 +1289,65 @@ def parse_financial_exhibits_workbook(
         if sheet_name is None:
             return None, ["No financial exhibit sheets found."]
         sheet = workbook[sheet_name]
-        date_cols: list[tuple[int, str]] = []
-        for col in range(1, sheet.max_column + 1):
-            header = sheet.cell(row=12, column=col).value
-            label = _format_exhibit_header(header)
-            if label:
-                date_cols.append((col, label))
-        if not date_cols:
-            warnings.append("No date columns found on row 12 of the financial exhibits sheet.")
-
         sections: list[dict[str, object]] = []
-        active_section = ""
-        for row in range(1, min(sheet.max_row, 180) + 1):
-            label = _cell_text(sheet.cell(row=row, column=4).value) or _cell_text(sheet.cell(row=row, column=5).value)
+        left_date_cols = _date_columns_in_range(sheet, 12, 4, 22)[-7:]
+        right_date_cols = _date_columns_in_range(sheet, 12, 24, sheet.max_column)[-7:]
+        if not left_date_cols:
+            warnings.append("No financial statement date columns found on row 12.")
+        if not right_date_cols:
+            warnings.append("No financial summary date columns found on row 12.")
+
+        def append_statement_section(section_name: str, start_row: int, end_row: int) -> None:
+            rows: list[dict[str, object]] = []
+            for row in range(start_row, min(end_row, sheet.max_row) + 1):
+                label = _financial_label(sheet, row, (4, 5, 6))
+                if not label:
+                    continue
+                label_key = _normalise(label)
+                if label_key in {_normalise(section_name), "in usd $ 000's", "investments at fair value"}:
+                    continue
+                values = [
+                    {"period": period, "value": _format_exhibit_value(sheet.cell(row=row, column=col).value)}
+                    for col, period in left_date_cols
+                ]
+                if not any(value["value"] != "-" for value in values):
+                    continue
+                rows.append({"label": label, "values": values})
+                if len(rows) >= max_rows_per_section:
+                    break
+            if rows:
+                sections.append({"section": section_name, "rows": rows})
+
+        append_statement_section("Balance Sheet", 13, 58)
+        append_statement_section("Income Statement", 63, min(sheet.max_row, 140))
+
+        summary_rows: list[dict[str, object]] = []
+        summary_headings = {
+            "commitments, drawdowns and distributions",
+            "% of committed capital",
+            "portfolio investments and nav",
+            "performance metrics",
+            "carried interest",
+        }
+        for row in range(13, min(sheet.max_row, 46) + 1):
+            label = _financial_label(sheet, row, (25,))
             if not label:
                 continue
             label_key = _normalise(label)
-            if any(_normalise(section) == label_key for section in FINANCIAL_EXHIBIT_SECTIONS) or label_key in {
-                "commitments, drawdowns and distributions",
-                "% of committed capital",
-                "portfolio investments and nav",
-                "performance metrics",
-                "carried interest",
-            }:
-                active_section = label
-                sections.append({"section": active_section, "rows": []})
-                continue
-            if not active_section or not sections:
+            if label_key in summary_headings:
+                summary_rows.append({"label": label, "subsection": True, "values": []})
                 continue
             values = [
                 {"period": period, "value": _format_exhibit_value(sheet.cell(row=row, column=col).value)}
-                for col, period in date_cols[-7:]
+                for col, period in right_date_cols
             ]
             if not any(value["value"] != "-" for value in values):
                 continue
-            rows = sections[-1]["rows"]
-            if isinstance(rows, list) and len(rows) < max_rows_per_section:
-                rows.append({"label": label, "values": values})
+            summary_rows.append({"label": label, "values": values})
+            if len(summary_rows) >= max_rows_per_section:
+                break
+        if summary_rows:
+            sections.append({"section": "Financial Summary", "rows": summary_rows})
 
         sections = [
             section
@@ -1109,7 +1358,7 @@ def parse_financial_exhibits_workbook(
             warnings.append("No usable financial exhibit rows found.")
         return {
             "source_sheet": sheet_name,
-            "periods": [period for _col, period in date_cols[-7:]],
+            "periods": [period for _col, period in (right_date_cols or left_date_cols)],
             "sections": sections,
         }, warnings
     finally:
