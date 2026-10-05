@@ -52,6 +52,7 @@ HIGHLIGHT_ROWS = (
 )
 
 MAX_BULLETS = 4
+MAX_COMMENTARY_BULLETS = 12
 MAX_BULLET_CHARS = 190
 MAX_DESCRIPTION_CHARS = 520
 MAX_UPDATES_CHARS = 820
@@ -854,7 +855,7 @@ def _commentary_rows_from_workbook(workbook_path: Path) -> dict[str, dict[str, o
             section = _cell_text(value(row, "Section")) or SECTION_PORTFOLIO_COMPANY
             updates = [
                 _cell_text(value(row, f"Bullet {index}")) or _cell_text(value(row, f"Key Update {index}"))
-                for index in range(1, MAX_BULLETS + 1)
+                for index in range(1, MAX_COMMENTARY_BULLETS + 1)
             ]
             key = _commentary_key(section, item)
             rows[key] = {
@@ -912,10 +913,7 @@ def build_monthly_workbook_with_commentary_sheet(
             "Include",
             "Item",
             "Description",
-            "Bullet 1",
-            "Bullet 2",
-            "Bullet 3",
-            "Bullet 4",
+            *[f"Bullet {index}" for index in range(1, MAX_COMMENTARY_BULLETS + 1)],
             "Notes",
             "Reviewer Status",
         ]
@@ -934,9 +932,9 @@ def build_monthly_workbook_with_commentary_sheet(
                 "Yes" if row.get("Include", True) else "No",
                 row.get("Item") or row.get("Company", ""),
                 row.get("Description", ""),
-                *updates[:MAX_BULLETS],
+                *updates[:MAX_COMMENTARY_BULLETS],
             ]
-            while len(values) < 8:
+            while len(values) < 4 + MAX_COMMENTARY_BULLETS:
                 values.append("")
             values.extend([row.get("Notes", ""), "Draft"])
             for col, value in enumerate(values, start=1):
@@ -945,7 +943,7 @@ def build_monthly_workbook_with_commentary_sheet(
                 if row_index % 2 == 0:
                     cell.fill = gray_fill
 
-        widths = [24, 12, 28, 72, 58, 58, 58, 58, 48, 20]
+        widths = [24, 12, 28, 72, *([58] * MAX_COMMENTARY_BULLETS), 48, 20]
         for col, width in enumerate(widths, start=1):
             sheet.column_dimensions[get_column_letter(col)].width = width
         sheet.freeze_panes = "A2"
@@ -965,12 +963,13 @@ def _slug(value: str) -> str:
     return slug or "company"
 
 
-def _review_updates(row: dict[str, object]) -> list[str]:
-    return [
+def _review_updates(row: dict[str, object], limit: int | None = MAX_BULLETS) -> list[str]:
+    updates = [
         _strip_bullet(line)
         for line in str(row.get("Key updates", "")).replace("\r", "\n").splitlines()
         if _strip_bullet(line)
-    ][:MAX_BULLETS]
+    ]
+    return updates if limit is None else updates[:limit]
 
 
 def _figma_metric_rows(
@@ -1138,7 +1137,7 @@ def build_figma_data_pack(
                 {
                     "name": item_name,
                     "description": str(row.get("Description", "")).strip(),
-                    "bullets": _review_updates(row),
+                    "bullets": _review_updates(row, limit=None),
                     "notes": str(row.get("Notes", "")).strip(),
                 }
             )
