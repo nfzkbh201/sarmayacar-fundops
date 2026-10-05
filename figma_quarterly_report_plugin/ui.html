@@ -58,8 +58,9 @@
   </head>
   <body>
     <h1>Sarmayacar Quarterly Importer</h1>
-    <p>Select the company-page template frame, paste the Figma data pack from Streamlit, then import.</p>
+    <p>Create the Sarmayacar report frames first, then paste the Figma data pack from Streamlit to fill company pages.</p>
     <textarea id="payload" placeholder="Paste Sarmayacar Quarterly Report JSON here"></textarea>
+    <button id="create-template" class="secondary">Create XD-style template frames</button>
     <button id="import">Import company pages</button>
     <button id="cancel" class="secondary">Cancel</button>
     <div id="status"></div>
@@ -67,6 +68,11 @@
     <script>
       const payload = document.getElementById("payload");
       const status = document.getElementById("status");
+
+      document.getElementById("create-template").onclick = () => {
+        parent.postMessage({ pluginMessage: { type: "create-template" } }, "*");
+        status.textContent = "Creating template frames...";
+      };
 
       document.getElementById("import").onclick = () => {
         let data;

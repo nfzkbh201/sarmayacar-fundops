@@ -13,7 +13,8 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable
 
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils.cell import column_index_from_string, get_column_letter, range_boundaries
 from openpyxl.worksheet.worksheet import Worksheet
 import streamlit as st
@@ -25,6 +26,7 @@ from monthly_reporting_page import QOQ_METHOD_MANUAL, _qoq_rows_for_workbook
 PROJECT_ROOT = Path(__file__).resolve().parent
 QUARTERLY_OUTPUTS_DIR = PROJECT_ROOT / "Outputs" / "Quarterly Reports"
 DEFAULT_OPENAI_MODEL = "gpt-5-mini"
+COMMENTARY_SHEET_NAME = "Quarterly Commentary"
 
 MAX_BULLETS = 4
 MAX_BULLET_CHARS = 190
@@ -104,6 +106,23 @@ def quarter_label(months: Iterable[tuple[int, int]]) -> str:
     year, ending_month = months[-1]
     quarter = ((ending_month - 1) // 3) + 1
     return f"Q{quarter} {year}"
+
+
+def company_page_months(months: Iterable[tuple[int, int]]) -> tuple[tuple[int, int], ...]:
+    months = tuple(months)
+    if not months:
+        return ()
+    start_year, start_month = months[0]
+    previous: list[tuple[int, int]] = []
+    year = start_year
+    month = start_month
+    for _ in range(3):
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+        previous.append((year, month))
+    return tuple(reversed(previous)) + months
 
 
 def _cell_text(value: object) -> str:
@@ -459,7 +478,9 @@ def _text_warnings(description: str, updates: tuple[str, ...]) -> list[str]:
 def parse_monthly_reporting_workbook(
     workbook_path: Path,
     months: tuple[tuple[int, int], ...],
+    metric_months: tuple[tuple[int, int], ...] | None = None,
 ) -> tuple[CompanyReportData, ...]:
+    metric_months = metric_months or months
     workbook = load_workbook(workbook_path, data_only=True)
     formula_workbook = load_workbook(workbook_path, data_only=False)
     qoq_rows, qoq_warnings = _qoq_rows_for_workbook(
@@ -496,7 +517,7 @@ def parse_monthly_reporting_workbook(
             formula_sheet = formula_workbook[sheet_name]
             description = _extract_description(sheet, profile.display_name)
             key_updates = _extract_key_updates(sheet)
-            metrics, metric_warnings = _extract_metrics(sheet, formula_sheet, months)
+            metrics, metric_warnings = _extract_metrics(sheet, formula_sheet, metric_months)
             company_warnings.extend(_text_warnings(description, key_updates))
             company_warnings.extend(metric_warnings)
             companies.append(
@@ -702,6 +723,152 @@ def _apply_update_drafts(
     return updated
 
 
+def _as_bool(value: object, default: bool = True) -> bool:
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"yes", "y", "true", "1", "include", "included"}:
+        return True
+    if text in {"no", "n", "false", "0", "exclude", "excluded"}:
+        return False
+    return default
+
+
+def _split_update_text(value: object) -> list[str]:
+    return [
+        _strip_bullet(line)
+        for line in str(value or "").replace("\r", "\n").splitlines()
+        if _strip_bullet(line)
+    ]
+
+
+def _commentary_rows_from_workbook(workbook_path: Path) -> dict[str, dict[str, object]]:
+    workbook = load_workbook(workbook_path, data_only=True)
+    try:
+        sheet_name = workbook_sheet_name(workbook, COMMENTARY_SHEET_NAME)
+        if sheet_name is None:
+            return {}
+        sheet = workbook[sheet_name]
+        headers = {
+            _normalise(sheet.cell(row=1, column=col).value or ""): col
+            for col in range(1, sheet.max_column + 1)
+        }
+        company_col = headers.get("company")
+        if company_col is None:
+            return {}
+
+        def value(row: int, header: str) -> object:
+            col = headers.get(_normalise(header))
+            return sheet.cell(row=row, column=col).value if col else None
+
+        rows: dict[str, dict[str, object]] = {}
+        for row in range(2, sheet.max_row + 1):
+            company = _cell_text(value(row, "Company"))
+            if not company:
+                continue
+            updates = [
+                _cell_text(value(row, f"Key Update {index}"))
+                for index in range(1, MAX_BULLETS + 1)
+            ]
+            rows[company] = {
+                "Include": _as_bool(value(row, "Include"), default=True),
+                "Company": company,
+                "Description": _cell_text(value(row, "Description")),
+                "Key updates": "\n".join(update for update in updates if update),
+                "Notes": _cell_text(value(row, "Notes")),
+                "Reviewer Status": _cell_text(value(row, "Reviewer Status")),
+            }
+        return rows
+    finally:
+        workbook.close()
+
+
+def _apply_commentary_rows(
+    base_rows: list[dict[str, object]],
+    commentary_rows: dict[str, dict[str, object]],
+) -> list[dict[str, object]]:
+    if not commentary_rows:
+        return base_rows
+    by_key = {_normalise(company): row for company, row in commentary_rows.items()}
+    merged: list[dict[str, object]] = []
+    for row in base_rows:
+        override = by_key.get(_normalise(str(row.get("Company", ""))))
+        if not override:
+            merged.append(row)
+            continue
+        next_row = dict(row)
+        for key in ("Include", "Description", "Key updates", "Notes"):
+            value = override.get(key)
+            if key == "Include" or value not in (None, ""):
+                next_row[key] = value
+        merged.append(next_row)
+    return merged
+
+
+def build_monthly_workbook_with_commentary_sheet(
+    workbook_path: Path,
+    review_rows: list[dict[str, object]],
+    months: tuple[tuple[int, int], ...],
+) -> bytes:
+    workbook = load_workbook(workbook_path)
+    try:
+        existing = workbook_sheet_name(workbook, COMMENTARY_SHEET_NAME)
+        if existing:
+            del workbook[existing]
+        sheet = workbook.create_sheet(COMMENTARY_SHEET_NAME, 0)
+        headers = [
+            "Company",
+            "Include",
+            "Description",
+            "Key Update 1",
+            "Key Update 2",
+            "Key Update 3",
+            "Key Update 4",
+            "Notes",
+            "Reviewer Status",
+        ]
+        green_fill = PatternFill("solid", fgColor="008C78")
+        gray_fill = PatternFill("solid", fgColor="F3F5F7")
+        for col, header in enumerate(headers, start=1):
+            cell = sheet.cell(row=1, column=col, value=header)
+            cell.fill = green_fill
+            cell.font = Font(color="FFFFFF", bold=True)
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        for row_index, row in enumerate(review_rows, start=2):
+            updates = _split_update_text(row.get("Key updates"))
+            values = [
+                row.get("Company", ""),
+                "Yes" if row.get("Include", True) else "No",
+                row.get("Description", ""),
+                *updates[:MAX_BULLETS],
+            ]
+            while len(values) < 7:
+                values.append("")
+            values.extend([row.get("Notes", ""), "Draft"])
+            for col, value in enumerate(values, start=1):
+                cell = sheet.cell(row=row_index, column=col, value=value)
+                cell.alignment = Alignment(vertical="top", wrap_text=True)
+                if row_index % 2 == 0:
+                    cell.fill = gray_fill
+
+        widths = [24, 12, 72, 58, 58, 58, 58, 48, 20]
+        for col, width in enumerate(widths, start=1):
+            sheet.column_dimensions[get_column_letter(col)].width = width
+        sheet.freeze_panes = "A2"
+        sheet["A" + str(len(review_rows) + 4)] = (
+            f"Generated by FundOps Quarterly Report for {quarter_label(months)}. "
+            "Edit this sheet, then re-upload the workbook in the Quarterly Report tab."
+        )
+        output = io.BytesIO()
+        workbook.save(output)
+        return output.getvalue()
+    finally:
+        workbook.close()
+
+
 def _slug(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
     return slug or "company"
@@ -807,6 +974,9 @@ def build_figma_data_pack(
                 "metric_1.month_1": "Metric first month value",
                 "metric_1.month_2": "Metric second month value",
                 "metric_1.month_3": "Metric third month value",
+                "metric_1.month_4": "Metric fourth month value",
+                "metric_1.month_5": "Metric fifth month value",
+                "metric_1.month_6": "Metric sixth month value",
                 "qoq_1.metric": "QoQ metric name",
                 "qoq_1.percent": "QoQ percentage change",
                 "notes.disclaimer": "Notes or disclaimer text layer",
@@ -1050,6 +1220,7 @@ def render_quarterly_report_page() -> None:
                 key="quarterly_report_quarter_end",
             )
         months = quarter_months(selected_year, dict(quarter_end_options)[selected_quarter_label])
+        table_months = company_page_months(months)
         with setup_cols[2]:
             st.metric("Report quarter", quarter_label(months))
 
@@ -1072,7 +1243,14 @@ def render_quarterly_report_page() -> None:
         workbook_path = tmp_dir / "monthly_reporting.xlsx"
         workbook_path.write_bytes(monthly_report_file.getbuffer())
         with st.spinner("Reading company pages from the monthly workbook"):
-            companies = parse_monthly_reporting_workbook(workbook_path, months)
+            companies = parse_monthly_reporting_workbook(workbook_path, months, metric_months=table_months)
+            commentary_rows = _commentary_rows_from_workbook(workbook_path)
+            base_review_rows = _apply_commentary_rows(_review_rows(companies), commentary_rows)
+            commentary_workbook_bytes = build_monthly_workbook_with_commentary_sheet(
+                workbook_path,
+                base_review_rows,
+                months,
+            )
 
     parsed_count = sum(1 for company in companies if company.sheet_name)
     qoq_signal_count = sum(len(company.qoq_changes) for company in companies)
@@ -1093,11 +1271,26 @@ def render_quarterly_report_page() -> None:
 
     with st.container(border=True):
         st.subheader("Human review")
-        st.caption("Generate draft key updates from workbook metrics, then edit text before creating the fixed-format PPTX.")
+        st.caption("Use the workbook commentary sheet as the source of truth, or generate AI draft updates from workbook metrics and review them here.")
         review_state_key = f"quarterly_report_rows_{quarter_label(months)}_{monthly_report_file.name}"
-        base_review_rows = _review_rows(companies)
         if review_state_key not in st.session_state:
             st.session_state[review_state_key] = base_review_rows
+
+        commentary_cols = st.columns([1, 2])
+        with commentary_cols[0]:
+            st.download_button(
+                "Download workbook with commentary sheet",
+                data=commentary_workbook_bytes,
+                file_name=f"{Path(monthly_report_file.name).stem} - with Quarterly Commentary.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                width="stretch",
+                key=f"{review_state_key}_download_commentary_workbook",
+            )
+        with commentary_cols[1]:
+            if commentary_rows:
+                st.success(f"Loaded {len(commentary_rows)} rows from `{COMMENTARY_SHEET_NAME}`.")
+            else:
+                st.caption(f"No `{COMMENTARY_SHEET_NAME}` sheet found yet. Download the workbook copy, edit the sheet, then re-upload it here.")
 
         ai_cols = st.columns([1, 1, 2])
         with ai_cols[0]:
@@ -1159,7 +1352,7 @@ def render_quarterly_report_page() -> None:
     figma_data_pack = build_figma_data_pack(
         companies=companies,
         review_rows=edited_rows,
-        months=months,
+        months=table_months,
         warnings=edited_warnings,
     )
 
@@ -1168,7 +1361,7 @@ def render_quarterly_report_page() -> None:
         st.caption("Download this JSON and import it with the private Figma plugin inside the quarterly report template.")
         handoff_cols = st.columns(3)
         handoff_cols[0].metric("Included companies", included_count)
-        handoff_cols[1].metric("QoQ signals", sum(len(company.qoq_changes) for company in companies))
+        handoff_cols[1].metric("Metric months", len(table_months))
         handoff_cols[2].metric("Plugin schema", figma_data_pack["schema_version"])
         st.download_button(
             "Download Figma data pack",
@@ -1191,7 +1384,7 @@ def render_quarterly_report_page() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         output_path = Path(tmp) / filename
         try:
-            build_company_pages_pptx(companies, edited_rows, months, output_path)
+            build_company_pages_pptx(companies, edited_rows, table_months, output_path)
         except RuntimeError as exc:
             st.error(str(exc))
             return
