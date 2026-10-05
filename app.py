@@ -32,14 +32,9 @@ st.set_page_config(
 st.title("Sarmayacar FundOps Dashboard")
 st.write("Upload updated files from the sidebar, or use the default project files.")
 
-workflow = st.radio(
-    "Workflow",
-    ["Capital Calls", "Distribution Notices", "Monthly Reporting", "Quarterly Report"],
-    index=2,
-    horizontal=True,
-    key="fundops_workflow",
+capital_calls_tab, distribution_notices_tab, monthly_reporting_tab, quarterly_report_tab = st.tabs(
+    ["Capital Calls", "Distribution Notices", "Monthly Reporting", "Quarterly Report"]
 )
-st.caption("Only the selected workflow loads, so the dashboard stays responsive.")
 
 with st.sidebar:
     st.markdown("### Connected Dashboard")
@@ -206,7 +201,7 @@ st.sidebar.caption(source_label(uploaded_drawdown_file, drawdown_file))
 st.sidebar.caption(source_label(uploaded_contact_file, contact_file))
 st.sidebar.caption(source_label(uploaded_template_file, template_file))
 
-if workflow == "Capital Calls":
+with capital_calls_tab:
     st.success("Data sources are ready.")
 
     required_capital_sources = [
@@ -1006,7 +1001,7 @@ if workflow == "Capital Calls":
                 )
 
 
-elif workflow == "Distribution Notices":
+with distribution_notices_tab:
     st.subheader("Distribution Notices")
     st.write("Upload the annual distribution file and notice template, then choose the sheet/header row to preview.")
 
@@ -1312,13 +1307,13 @@ elif workflow == "Distribution Notices":
                 st.info("Upload one recently generated notice so we can match the exact wording and layout.")
 
 
-elif workflow == "Monthly Reporting":
+with monthly_reporting_tab:
     from monthly_reporting_page import render_monthly_reporting_page
 
     render_monthly_reporting_page()
 
 
-else:
+with quarterly_report_tab:
     from quarterly_report import render_quarterly_report_page
 
     render_quarterly_report_page()
