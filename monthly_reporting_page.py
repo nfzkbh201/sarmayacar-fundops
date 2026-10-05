@@ -942,7 +942,6 @@ def _render_latest_outputs() -> None:
 
 def render_monthly_reporting_page() -> None:
     st.header("Monthly Reporting")
-    st.info("DEMO — ILLUSTRATIVE DATA")
     st.caption("Upload the reporting template and whichever company KPI files have arrived. Missing companies or missing months are left blank.")
 
     first_historical_year = 2021

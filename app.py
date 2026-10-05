@@ -32,6 +32,15 @@ st.set_page_config(
 st.title("Sarmayacar FundOps Dashboard")
 st.write("Upload updated files from the sidebar, or use the default project files.")
 
+workflow = st.radio(
+    "Workflow",
+    ["Capital Calls", "Distribution Notices", "Monthly Reporting", "Quarterly Report"],
+    index=2,
+    horizontal=True,
+    key="fundops_workflow",
+)
+st.caption("Only the selected workflow loads, so the dashboard stays responsive.")
+
 with st.sidebar:
     st.markdown("### Connected Dashboard")
     st.link_button(
@@ -196,14 +205,6 @@ st.sidebar.caption(source_label(uploaded_investor_master, investor_master))
 st.sidebar.caption(source_label(uploaded_drawdown_file, drawdown_file))
 st.sidebar.caption(source_label(uploaded_contact_file, contact_file))
 st.sidebar.caption(source_label(uploaded_template_file, template_file))
-
-workflow = st.sidebar.radio(
-    "Workflow",
-    ["Capital Calls", "Distribution Notices", "Monthly Reporting", "Quarterly Report"],
-    index=3,
-    key="fundops_workflow",
-)
-st.sidebar.caption("Only the selected workflow loads, so the app stays responsive.")
 
 if workflow == "Capital Calls":
     st.success("Data sources are ready.")
