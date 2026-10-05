@@ -19,9 +19,6 @@ monthly_reporting_root = Path(
 if str(monthly_reporting_root) not in sys.path:
     sys.path.insert(0, str(monthly_reporting_root))
 
-from monthly_reporting_page import render_monthly_reporting_page
-from quarterly_report import render_quarterly_report_page
-
 DASHBOARD_URL = os.environ.get(
     "SARMAYACAR_DASHBOARD_URL",
     "https://sarmayacar-dashboard.vercel.app/whats-new",
@@ -1315,8 +1312,12 @@ elif workflow == "Distribution Notices":
 
 
 elif workflow == "Monthly Reporting":
+    from monthly_reporting_page import render_monthly_reporting_page
+
     render_monthly_reporting_page()
 
 
 else:
+    from quarterly_report import render_quarterly_report_page
+
     render_quarterly_report_page()
