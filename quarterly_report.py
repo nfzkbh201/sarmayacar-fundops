@@ -27,6 +27,29 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 QUARTERLY_OUTPUTS_DIR = PROJECT_ROOT / "Outputs" / "Quarterly Reports"
 DEFAULT_OPENAI_MODEL = "gpt-5-mini"
 COMMENTARY_SHEET_NAME = "Quarterly Commentary"
+SECTION_HIGHLIGHTS = "Highlights"
+SECTION_PORTFOLIO_COMPANY = "Portfolio Company"
+SECTION_OPERATOR_ANGEL = "Operator Angel"
+FINANCIAL_EXHIBIT_SECTIONS = ("Balance Sheet", "Income Statement", "Financial Summary")
+
+OPERATOR_ANGEL_COMPANIES = (
+    "Savvy Technologies",
+    "Bolandi Technologies",
+    "Delsys Technologies",
+    "Startup Early",
+    "Scholar Den",
+    "House Call",
+    "Orko",
+    "L.L.M.Bots",
+    "Aabshar",
+    "Raptr Games",
+)
+
+HIGHLIGHT_ROWS = (
+    ("Investment Activity", "Fund-level investment activity bullets for the first highlights page."),
+    ("Portfolio Highlights", "Portfolio company bullets for the first highlights page."),
+    ("Other Firm Matters", "Firm-level bullets for the first highlights page."),
+)
 
 MAX_BULLETS = 4
 MAX_BULLET_CHARS = 190
@@ -92,6 +115,13 @@ class CompanyReportData:
     metrics: tuple[MetricRow, ...]
     qoq_changes: tuple[dict[str, object], ...]
     warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class FinancialExhibitRow:
+    section: str
+    label: str
+    values: dict[str, object]
 
 
 def quarter_months(year: int, quarter_end_month: int) -> tuple[tuple[int, int], ...]:
@@ -711,7 +741,10 @@ def _apply_update_drafts(
 ) -> list[dict[str, object]]:
     updated: list[dict[str, object]] = []
     for row in rows:
-        company = str(row.get("Company", ""))
+        if row.get("Section") != SECTION_PORTFOLIO_COMPANY:
+            updated.append(row)
+            continue
+        company = str(row.get("Item") or row.get("Company", ""))
         draft = drafts.get(company)
         if not draft:
             updated.append(row)
@@ -744,6 +777,56 @@ def _split_update_text(value: object) -> list[str]:
     ]
 
 
+def _commentary_key(section: str, item: str) -> str:
+    return f"{section.strip()}::{item.strip()}"
+
+
+def _highlight_review_rows() -> list[dict[str, object]]:
+    return [
+        {
+            "Section": SECTION_HIGHLIGHTS,
+            "Include": True,
+            "Company": item,
+            "Item": item,
+            "Description": guidance,
+            "Key updates": "",
+            "Notes": "",
+        }
+        for item, guidance in HIGHLIGHT_ROWS
+    ]
+
+
+def _operator_angel_review_rows() -> list[dict[str, object]]:
+    return [
+        {
+            "Section": SECTION_OPERATOR_ANGEL,
+            "Include": True,
+            "Company": company,
+            "Item": company,
+            "Description": "",
+            "Key updates": "",
+            "Notes": "",
+        }
+        for company in OPERATOR_ANGEL_COMPANIES
+    ]
+
+
+def _review_rows(companies: tuple[CompanyReportData, ...]) -> list[dict[str, object]]:
+    portfolio_rows = [
+        {
+            "Section": SECTION_PORTFOLIO_COMPANY,
+            "Include": bool(company.sheet_name),
+            "Company": company.company,
+            "Item": company.company,
+            "Description": company.description,
+            "Key updates": "\n".join(company.key_updates),
+            "Notes": "",
+        }
+        for company in companies
+    ]
+    return [*_highlight_review_rows(), *portfolio_rows, *_operator_angel_review_rows()]
+
+
 def _commentary_rows_from_workbook(workbook_path: Path) -> dict[str, dict[str, object]]:
     workbook = load_workbook(workbook_path, data_only=True)
     try:
@@ -755,8 +838,8 @@ def _commentary_rows_from_workbook(workbook_path: Path) -> dict[str, dict[str, o
             _normalise(sheet.cell(row=1, column=col).value or ""): col
             for col in range(1, sheet.max_column + 1)
         }
-        company_col = headers.get("company")
-        if company_col is None:
+        item_col = headers.get("item") or headers.get("company")
+        if item_col is None:
             return {}
 
         def value(row: int, header: str) -> object:
@@ -765,16 +848,20 @@ def _commentary_rows_from_workbook(workbook_path: Path) -> dict[str, dict[str, o
 
         rows: dict[str, dict[str, object]] = {}
         for row in range(2, sheet.max_row + 1):
-            company = _cell_text(value(row, "Company"))
-            if not company:
+            item = _cell_text(value(row, "Item")) or _cell_text(value(row, "Company"))
+            if not item:
                 continue
+            section = _cell_text(value(row, "Section")) or SECTION_PORTFOLIO_COMPANY
             updates = [
-                _cell_text(value(row, f"Key Update {index}"))
+                _cell_text(value(row, f"Bullet {index}")) or _cell_text(value(row, f"Key Update {index}"))
                 for index in range(1, MAX_BULLETS + 1)
             ]
-            rows[company] = {
+            key = _commentary_key(section, item)
+            rows[key] = {
+                "Section": section,
                 "Include": _as_bool(value(row, "Include"), default=True),
-                "Company": company,
+                "Company": item,
+                "Item": item,
                 "Description": _cell_text(value(row, "Description")),
                 "Key updates": "\n".join(update for update in updates if update),
                 "Notes": _cell_text(value(row, "Notes")),
@@ -791,10 +878,12 @@ def _apply_commentary_rows(
 ) -> list[dict[str, object]]:
     if not commentary_rows:
         return base_rows
-    by_key = {_normalise(company): row for company, row in commentary_rows.items()}
+    by_key = {_normalise(key): row for key, row in commentary_rows.items()}
     merged: list[dict[str, object]] = []
     for row in base_rows:
-        override = by_key.get(_normalise(str(row.get("Company", ""))))
+        key = _commentary_key(str(row.get("Section", SECTION_PORTFOLIO_COMPANY)), str(row.get("Company", "") or row.get("Item", "")))
+        legacy_key = str(row.get("Company", "") or row.get("Item", ""))
+        override = by_key.get(_normalise(key)) or by_key.get(_normalise(legacy_key))
         if not override:
             merged.append(row)
             continue
@@ -819,13 +908,14 @@ def build_monthly_workbook_with_commentary_sheet(
             del workbook[existing]
         sheet = workbook.create_sheet(COMMENTARY_SHEET_NAME, 0)
         headers = [
-            "Company",
+            "Section",
             "Include",
+            "Item",
             "Description",
-            "Key Update 1",
-            "Key Update 2",
-            "Key Update 3",
-            "Key Update 4",
+            "Bullet 1",
+            "Bullet 2",
+            "Bullet 3",
+            "Bullet 4",
             "Notes",
             "Reviewer Status",
         ]
@@ -840,12 +930,13 @@ def build_monthly_workbook_with_commentary_sheet(
         for row_index, row in enumerate(review_rows, start=2):
             updates = _split_update_text(row.get("Key updates"))
             values = [
-                row.get("Company", ""),
+                row.get("Section", SECTION_PORTFOLIO_COMPANY),
                 "Yes" if row.get("Include", True) else "No",
+                row.get("Item") or row.get("Company", ""),
                 row.get("Description", ""),
                 *updates[:MAX_BULLETS],
             ]
-            while len(values) < 7:
+            while len(values) < 8:
                 values.append("")
             values.extend([row.get("Notes", ""), "Draft"])
             for col, value in enumerate(values, start=1):
@@ -854,7 +945,7 @@ def build_monthly_workbook_with_commentary_sheet(
                 if row_index % 2 == 0:
                     cell.fill = gray_fill
 
-        widths = [24, 12, 72, 58, 58, 58, 58, 48, 20]
+        widths = [24, 12, 28, 72, 58, 58, 58, 58, 48, 20]
         for col, width in enumerate(widths, start=1):
             sheet.column_dimensions[get_column_letter(col)].width = width
         sheet.freeze_panes = "A2"
@@ -921,18 +1012,149 @@ def _figma_qoq_rows(company: CompanyReportData) -> list[dict[str, object]]:
     return rows
 
 
+def _format_exhibit_header(value: object) -> str:
+    if isinstance(value, (datetime, date)):
+        return value.strftime("%b-%y")
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _format_exhibit_value(value: object) -> str:
+    if value is None or value == "":
+        return "-"
+    if isinstance(value, (datetime, date)):
+        return value.strftime("%b-%y")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if abs(value) < 10 and not float(value).is_integer():
+            return f"{value:.2f}x" if value > 1 else f"{value * 100:.1f}%"
+        return f"{int(round(value)):,}"
+    return str(value).strip()
+
+
+def _financial_sheet_for_months(workbook, months: tuple[tuple[int, int], ...]) -> str | None:
+    if not months:
+        return None
+    year, month = months[-1]
+    wanted_tokens = {
+        f"{month_abbr[month].lower()} {year}",
+        f"{month_abbr[month].lower()} {str(year)[-2:]}",
+    }
+    for sheet_name in workbook.sheetnames:
+        normalised = " ".join(sheet_name.lower().strip().split())
+        if normalised in wanted_tokens:
+            return sheet_name
+    for sheet_name in workbook.sheetnames:
+        normalised = " ".join(sheet_name.lower().strip().split())
+        if month_abbr[month].lower() in normalised and str(year) in normalised:
+            return sheet_name
+    return workbook.sheetnames[-1] if workbook.sheetnames else None
+
+
+def parse_financial_exhibits_workbook(
+    workbook_path: Path,
+    months: tuple[tuple[int, int], ...],
+    max_rows_per_section: int = 34,
+) -> tuple[dict[str, object] | None, list[str]]:
+    warnings: list[str] = []
+    workbook = load_workbook(workbook_path, data_only=True)
+    try:
+        sheet_name = _financial_sheet_for_months(workbook, months)
+        if sheet_name is None:
+            return None, ["No financial exhibit sheets found."]
+        sheet = workbook[sheet_name]
+        date_cols: list[tuple[int, str]] = []
+        for col in range(1, sheet.max_column + 1):
+            header = sheet.cell(row=12, column=col).value
+            label = _format_exhibit_header(header)
+            if label:
+                date_cols.append((col, label))
+        if not date_cols:
+            warnings.append("No date columns found on row 12 of the financial exhibits sheet.")
+
+        sections: list[dict[str, object]] = []
+        active_section = ""
+        for row in range(1, min(sheet.max_row, 180) + 1):
+            label = _cell_text(sheet.cell(row=row, column=4).value) or _cell_text(sheet.cell(row=row, column=5).value)
+            if not label:
+                continue
+            label_key = _normalise(label)
+            if any(_normalise(section) == label_key for section in FINANCIAL_EXHIBIT_SECTIONS) or label_key in {
+                "commitments, drawdowns and distributions",
+                "% of committed capital",
+                "portfolio investments and nav",
+                "performance metrics",
+                "carried interest",
+            }:
+                active_section = label
+                sections.append({"section": active_section, "rows": []})
+                continue
+            if not active_section or not sections:
+                continue
+            values = [
+                {"period": period, "value": _format_exhibit_value(sheet.cell(row=row, column=col).value)}
+                for col, period in date_cols[-7:]
+            ]
+            if not any(value["value"] != "-" for value in values):
+                continue
+            rows = sections[-1]["rows"]
+            if isinstance(rows, list) and len(rows) < max_rows_per_section:
+                rows.append({"label": label, "values": values})
+
+        sections = [
+            section
+            for section in sections
+            if isinstance(section.get("rows"), list) and section["rows"]
+        ]
+        if not sections:
+            warnings.append("No usable financial exhibit rows found.")
+        return {
+            "source_sheet": sheet_name,
+            "periods": [period for _col, period in date_cols[-7:]],
+            "sections": sections,
+        }, warnings
+    finally:
+        workbook.close()
+
+
 def build_figma_data_pack(
     companies: tuple[CompanyReportData, ...],
     review_rows: list[dict[str, object]],
     months: tuple[tuple[int, int], ...],
     warnings: list[dict[str, str]],
+    financial_exhibits: dict[str, object] | None = None,
 ) -> dict[str, object]:
     companies_by_name = {company.company: company for company in companies}
     report_companies: list[dict[str, object]] = []
+    highlight_sections: list[dict[str, object]] = []
+    operator_angels: list[dict[str, object]] = []
     for row in review_rows:
         if not row.get("Include", True):
             continue
-        company_name = str(row.get("Company", "")).strip()
+        section = str(row.get("Section", SECTION_PORTFOLIO_COMPANY)).strip() or SECTION_PORTFOLIO_COMPANY
+        item_name = str(row.get("Item") or row.get("Company", "")).strip()
+        if section == SECTION_HIGHLIGHTS:
+            highlight_sections.append(
+                {
+                    "name": item_name,
+                    "description": str(row.get("Description", "")).strip(),
+                    "bullets": _review_updates(row),
+                    "notes": str(row.get("Notes", "")).strip(),
+                }
+            )
+            continue
+        if section == SECTION_OPERATOR_ANGEL:
+            operator_angels.append(
+                {
+                    "name": item_name,
+                    "slug": _slug(item_name),
+                    "description": str(row.get("Description", "")).strip(),
+                    "key_updates": _review_updates(row),
+                    "notes": str(row.get("Notes", "")).strip(),
+                }
+            )
+            continue
+        company_name = item_name
         company = companies_by_name.get(company_name)
         if company is None:
             continue
@@ -953,7 +1175,7 @@ def build_figma_data_pack(
             }
         )
 
-    return {
+    payload = {
         "schema_version": "sarmayacar.quarterly_report.v1",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "report": {
@@ -982,8 +1204,12 @@ def build_figma_data_pack(
                 "notes.disclaimer": "Notes or disclaimer text layer",
             },
         },
+        "highlights": highlight_sections,
         "companies": report_companies,
+        "operator_angels": operator_angels,
+        "financial_exhibits": financial_exhibits,
     }
+    return payload
 
 
 def _json_download_bytes(payload: dict[str, object]) -> bytes:
@@ -1109,7 +1335,10 @@ def build_company_pages_pptx(
     for review in review_rows:
         if not review.get("Include", True):
             continue
-        company = data_by_company.get(str(review["Company"]))
+        if review.get("Section", SECTION_PORTFOLIO_COMPANY) != SECTION_PORTFOLIO_COMPANY:
+            continue
+        company_name = str(review.get("Item") or review.get("Company", ""))
+        company = data_by_company.get(company_name)
         if company is None:
             continue
 
@@ -1144,24 +1373,15 @@ def build_company_pages_pptx(
     prs.save(output_path)
 
 
-def _review_rows(companies: tuple[CompanyReportData, ...]) -> list[dict[str, object]]:
-    return [
-        {
-            "Include": bool(company.sheet_name),
-            "Company": company.company,
-            "Description": company.description,
-            "Key updates": "\n".join(company.key_updates),
-            "Notes": "",
-        }
-        for company in companies
-    ]
-
-
 def _warning_rows(
     companies: tuple[CompanyReportData, ...],
     edited_rows: list[dict[str, object]] | None = None,
 ) -> list[dict[str, str]]:
-    by_company = {row.get("Company"): row for row in edited_rows or []}
+    by_company = {
+        str(row.get("Item") or row.get("Company", "")): row
+        for row in edited_rows or []
+        if row.get("Section", SECTION_PORTFOLIO_COMPANY) == SECTION_PORTFOLIO_COMPANY
+    }
     rows: list[dict[str, str]] = []
     for company in companies:
         warnings = list(company.warnings)
@@ -1229,6 +1449,11 @@ def render_quarterly_report_page() -> None:
             type=["xlsx"],
             key="quarterly_monthly_report_file",
         )
+        financial_exhibits_file = st.file_uploader(
+            "Financial exhibits workbook (optional)",
+            type=["xlsx"],
+            key="quarterly_financial_exhibits_file",
+        )
 
     if monthly_report_file is None:
         st.info("Upload the completed Monthly Reporting workbook to build the review screen.")
@@ -1237,6 +1462,9 @@ def render_quarterly_report_page() -> None:
             with st.expander("Latest generated quarterly files", expanded=False):
                 st.dataframe(latest_rows, hide_index=True, width="stretch")
         return
+
+    financial_exhibits = None
+    financial_exhibit_warnings: list[str] = []
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
@@ -1251,6 +1479,14 @@ def render_quarterly_report_page() -> None:
                 base_review_rows,
                 months,
             )
+        if financial_exhibits_file is not None:
+            exhibits_path = tmp_dir / "financial_exhibits.xlsx"
+            exhibits_path.write_bytes(financial_exhibits_file.getbuffer())
+            with st.spinner("Reading financial exhibits workbook"):
+                financial_exhibits, financial_exhibit_warnings = parse_financial_exhibits_workbook(
+                    exhibits_path,
+                    months,
+                )
 
     parsed_count = sum(1 for company in companies if company.sheet_name)
     qoq_signal_count = sum(len(company.qoq_changes) for company in companies)
@@ -1263,6 +1499,12 @@ def render_quarterly_report_page() -> None:
         metric_cols[1].metric("Companies in scope", len(companies))
         metric_cols[2].metric("QoQ signals", qoq_signal_count)
         metric_cols[3].metric("Warnings", len(warning_rows))
+        if financial_exhibits_file is not None:
+            if financial_exhibits:
+                sections = financial_exhibits.get("sections", [])
+                st.success(f"Financial exhibits loaded from `{financial_exhibits.get('source_sheet')}` with {len(sections)} sections.")
+            if financial_exhibit_warnings:
+                st.warning(" ".join(financial_exhibit_warnings))
         if warning_rows:
             st.caption("Warnings are review flags and do not block PPTX generation.")
             st.dataframe(warning_rows, hide_index=True, width="stretch")
@@ -1332,10 +1574,13 @@ def render_quarterly_report_page() -> None:
             st.session_state[review_state_key],
             hide_index=True,
             width="stretch",
-            disabled=["Company"],
+            disabled=["Section", "Item", "Company"],
+            column_order=["Section", "Include", "Item", "Description", "Key updates", "Notes"],
             key=f"quarterly_report_review_{quarter_label(months)}_{monthly_report_file.name}",
             column_config={
+                "Section": st.column_config.TextColumn("Section", width="medium"),
                 "Include": st.column_config.CheckboxColumn("Include"),
+                "Item": st.column_config.TextColumn("Item", width="medium"),
                 "Description": st.column_config.TextColumn("Description", width="large"),
                 "Key updates": st.column_config.TextColumn("Key updates", width="large"),
                 "Notes": st.column_config.TextColumn("Notes", width="medium"),
@@ -1348,21 +1593,31 @@ def render_quarterly_report_page() -> None:
             st.caption("Warnings are review flags and do not block PPTX generation.")
             st.dataframe(edited_warnings, hide_index=True, width="stretch")
 
-    included_count = sum(1 for row in edited_rows if row.get("Include"))
+    included_company_count = sum(
+        1
+        for row in edited_rows
+        if row.get("Include") and row.get("Section", SECTION_PORTFOLIO_COMPANY) == SECTION_PORTFOLIO_COMPANY
+    )
+    included_operator_count = sum(
+        1
+        for row in edited_rows
+        if row.get("Include") and row.get("Section") == SECTION_OPERATOR_ANGEL
+    )
     figma_data_pack = build_figma_data_pack(
         companies=companies,
         review_rows=edited_rows,
         months=table_months,
         warnings=edited_warnings,
+        financial_exhibits=financial_exhibits,
     )
 
     with st.container(border=True):
         st.subheader("Figma handoff")
         st.caption("Download this JSON and import it with the private Figma plugin inside the quarterly report template.")
         handoff_cols = st.columns(3)
-        handoff_cols[0].metric("Included companies", included_count)
-        handoff_cols[1].metric("Metric months", len(table_months))
-        handoff_cols[2].metric("Plugin schema", figma_data_pack["schema_version"])
+        handoff_cols[0].metric("Portfolio companies", included_company_count)
+        handoff_cols[1].metric("Operator angels", included_operator_count)
+        handoff_cols[2].metric("Financial exhibit sections", len((financial_exhibits or {}).get("sections", [])))
         st.download_button(
             "Download Figma data pack",
             data=_json_download_bytes(figma_data_pack),
@@ -1374,7 +1629,7 @@ def render_quarterly_report_page() -> None:
     generate = st.button(
         "Generate company pages PPTX",
         type="primary",
-        disabled=included_count == 0,
+        disabled=included_company_count == 0,
         width="stretch",
     )
     if not generate:

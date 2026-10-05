@@ -304,6 +304,82 @@ async function fillCompanyFrame(frame, company, report, warnings) {
   }
 }
 
+function bulletText(items) {
+  return (items || []).filter(Boolean).map((item) => `-  ${item}`).join("\n");
+}
+
+async function fillHighlights(data, warnings) {
+  const frame = figma.currentPage.findOne((node) => node.name === "03 Highlights");
+  if (!frame) return null;
+  const nodes = collectNodesByName(frame);
+  const highlights = data.highlights || [];
+  const byName = new Map(highlights.map((item) => [String(item.name || "").toLowerCase(), item]));
+  const investment = byName.get("investment activity") || {};
+  const portfolio = byName.get("portfolio highlights") || {};
+  const other = byName.get("other firm matters") || {};
+  await setText(nodes, "highlights.investment_bullets", bulletText(investment.bullets), warnings);
+  await setText(nodes, "highlights.portfolio_bullets", bulletText(portfolio.bullets), warnings);
+  await setText(nodes, "highlights.other_bullets", bulletText(other.bullets), warnings);
+  return frame;
+}
+
+async function createOperatorAngelPages(operatorAngels, startX, startY) {
+  const created = [];
+  const pageSize = 2;
+  for (let page = 0; page < operatorAngels.length; page += pageSize) {
+    const frame = createFrame(`Operator Angel Companies ${Math.floor(page / pageSize) + 1}`, startX + created.length * (PAGE_W + 90), startY);
+    await commonHeader(frame, "Investor Report", String(21 + created.length).padStart(2, "0"));
+    await text(frame, "operator.section_title", "OPERATOR ANGEL COMPANIES", 46, 99, 540, 42, 34, { color: GREEN });
+    line(frame, "operator.section_rule", 542, 121, 1080, GREEN);
+    const pair = operatorAngels.slice(page, page + pageSize);
+    for (let i = 0; i < pair.length; i += 1) {
+      const company = pair[i];
+      const yBase = 185 + i * 365;
+      await text(frame, `operator.company_${i + 1}.name`, company.name || "", 46, yBase, 420, 40, 32, { bold: true, color: GREEN });
+      line(frame, `operator.company_${i + 1}.rule`, 422, yBase + 16, 1200, GREEN);
+      await text(frame, `operator.company_${i + 1}.description_heading`, "Company Description", 46, yBase + 56, 300, 28, 21, { color: DARK });
+      await text(frame, `operator.company_${i + 1}.description`, company.description || "", 46, yBase + 97, 1500, 70, 16, { color: MID, lineHeight: 170 });
+      await text(frame, `operator.company_${i + 1}.updates_heading`, "Key Updates", 46, yBase + 176, 240, 28, 21, { color: DARK });
+      await text(frame, `operator.company_${i + 1}.updates`, bulletText(company.key_updates), 46, yBase + 219, 1500, 110, 16, { color: MID, lineHeight: 170 });
+    }
+    created.push(frame);
+  }
+  return created;
+}
+
+async function createFinancialExhibitPages(financialExhibits, startX, startY) {
+  if (!financialExhibits || !financialExhibits.sections) return [];
+  const created = [];
+  const periods = financialExhibits.periods || [];
+  for (const section of financialExhibits.sections.slice(0, 8)) {
+    const frame = createFrame(`Financial Exhibits - ${section.section || "Section"}`, startX + created.length * (PAGE_W + 90), startY);
+    await commonHeader(frame, "Financial Exhibits", String(26 + created.length).padStart(2, "0"));
+    await text(frame, "financial.title", "FINANCIAL EXHIBITS", 100, 111, 420, 42, 34, { color: GREEN });
+    line(frame, "financial.title_rule", 460, 138, 1060, GREEN);
+    rect(frame, "financial.section_header", 88, 152, 1505, 52, GREEN, 10);
+    await text(frame, "financial.section_header_text", section.section || "Financial Summary", 112, 170, 900, 20, 13, { bold: true, color: WHITE });
+    await text(frame, "financial.units", "In USD $ 000's\nUnaudited figures", 112, 216, 260, 42, 14, { color: { r: 0.58, g: 0.58, b: 0.58 } });
+    const labelX = 112;
+    const y0 = 286;
+    const colW = 132;
+    for (let c = 0; c < periods.length; c += 1) {
+      await text(frame, `financial.period_${c + 1}`, periods[c], 660 + c * colW, y0, colW - 8, 20, 13, { bold: true, color: MID, align: "RIGHT" });
+    }
+    const rows = section.rows || [];
+    for (let r = 0; r < Math.min(rows.length, 30); r += 1) {
+      const row = rows[r];
+      const y = y0 + 34 + r * 25;
+      await text(frame, `financial.row_${r + 1}.label`, row.label || "", labelX, y, 480, 20, 13, { color: MID });
+      const values = row.values || [];
+      for (let c = 0; c < Math.min(values.length, periods.length); c += 1) {
+        await text(frame, `financial.row_${r + 1}.value_${c + 1}`, values[c].value || "", 660 + c * colW, y, colW - 8, 20, 13, { color: MID, align: "RIGHT" });
+      }
+    }
+    created.push(frame);
+  }
+  return created;
+}
+
 async function findOrCreateCompanyTemplate() {
   const selection = figma.currentPage.selection;
   if (selection.length === 1 && ["FRAME", "COMPONENT", "INSTANCE"].includes(selection[0].type)) {
@@ -321,7 +397,10 @@ async function importCompanies(data) {
     throw new Error("Unsupported or missing Sarmayacar quarterly report schema.");
   }
   const companies = data.companies || [];
-  if (!companies.length) throw new Error("No companies found in the data pack.");
+  const operatorAngels = data.operator_angels || [];
+  if (!companies.length && !operatorAngels.length && !data.financial_exhibits) {
+    throw new Error("No report data found in the data pack.");
+  }
 
   await ensureFonts();
   const template = await findOrCreateCompanyTemplate();
@@ -329,6 +408,8 @@ async function importCompanies(data) {
   const spacing = template.width + 90;
   const warnings = [];
   const created = [];
+  const highlightFrame = await fillHighlights(data, warnings);
+  if (highlightFrame) created.push(highlightFrame);
 
   for (let index = 0; index < companies.length; index += 1) {
     const company = companies[index];
@@ -340,6 +421,10 @@ async function importCompanies(data) {
     await fillCompanyFrame(clone, company, report, warnings);
     created.push(clone);
   }
+  const operatorStartX = template.x;
+  const operatorStartY = template.y + PAGE_H + 90;
+  created.push(...await createOperatorAngelPages(operatorAngels, operatorStartX, operatorStartY));
+  created.push(...await createFinancialExhibitPages(data.financial_exhibits, operatorStartX, operatorStartY + PAGE_H + 90));
 
   figma.currentPage.selection = created;
   figma.viewport.scrollAndZoomIntoView(created);

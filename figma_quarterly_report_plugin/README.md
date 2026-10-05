@@ -26,6 +26,9 @@ frames and fills them from reviewed workbook data.
 - Operator angel company template
 - Financial exhibits placeholder
 - One filled company page per included company
+- Filled highlights text when a `Quarterly Commentary` sheet is present
+- Filled operator angel pages from the commentary sheet
+- Filled financial exhibit pages from the uploaded financial exhibits workbook
 
 ## Company Page Data Layers
 
@@ -47,5 +50,6 @@ Metric table placeholders:
 - repeat through `metric_10.*`
 
 The current Streamlit data pack fills available metrics and leaves extra rows
-blank. Portfolio tables, operator angel pages, and financial exhibits are
-created as editable template frames for later phases.
+blank. Portfolio tables are still placeholders for a later phase; highlights,
+operator angel pages, company pages, and financial exhibit pages are exported
+as editable Figma frames.
