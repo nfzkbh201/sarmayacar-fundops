@@ -7,7 +7,7 @@ import re
 import tempfile
 import ast
 import operator
-from calendar import month_abbr
+from calendar import month_abbr, month_name
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
@@ -1221,22 +1221,31 @@ def _figma_qoq_rows(company: CompanyReportData) -> list[dict[str, object]]:
     return rows
 
 
+MONTH_YEAR_RE = re.compile(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[ -]?\d{2,4}$", re.IGNORECASE)
+
+
 def _format_exhibit_header(value: object) -> str:
     if isinstance(value, (datetime, date)):
         return value.strftime("%b-%y")
     if value is None:
         return ""
-    return str(value).strip()
+    text = str(value).strip()
+    if MONTH_YEAR_RE.match(text):
+        month_part, year_part = re.split(r"[ -]", text, maxsplit=1)
+        return f"{month_part[:3].title()}-{year_part[-2:]}"
+    return ""
 
 
-def _format_exhibit_value(value: object) -> str:
+def _format_exhibit_value(value: object, *, ratio_style: str | None = None) -> str:
     if value is None or value == "":
         return "-"
     if isinstance(value, (datetime, date)):
         return value.strftime("%b-%y")
     if isinstance(value, (int, float)) and not isinstance(value, bool):
-        if abs(value) < 10 and not float(value).is_integer():
-            return f"{value:.2f}x" if value > 1 else f"{value * 100:.1f}%"
+        if ratio_style == "percent":
+            return f"{value * 100:.1f}%"
+        if ratio_style == "multiple":
+            return f"{value:.2f}x"
         return f"{int(round(value)):,}"
     return str(value).strip()
 
@@ -1258,23 +1267,59 @@ def _financial_label(sheet: Worksheet, row: int, label_cols: Iterable[int]) -> s
     return ""
 
 
+def _find_financial_heading(sheet: Worksheet, heading: str) -> tuple[int, int] | None:
+    target = _normalise(heading)
+    for row in range(1, min(sheet.max_row, 180) + 1):
+        for col in range(1, min(sheet.max_column, 60) + 1):
+            if _normalise(_cell_text(sheet.cell(row=row, column=col).value)) == target:
+                return row, col
+    return None
+
+
+def _sheet_financial_score(sheet: Worksheet, target_sheet_tokens: set[str]) -> int:
+    score = 0
+    headings = {
+        "balance sheet": _find_financial_heading(sheet, "Balance Sheet"),
+        "income statement": _find_financial_heading(sheet, "Income Statement"),
+        "financial summary": _find_financial_heading(sheet, "Financial Summary"),
+    }
+    score += sum(100 for location in headings.values() if location is not None)
+    title = " ".join(sheet.title.lower().strip().split())
+    if title in target_sheet_tokens:
+        score += 80
+    elif any(token in title for token in target_sheet_tokens):
+        score += 40
+    if "irr" in title:
+        score -= 200
+    balance = headings["balance sheet"]
+    summary = headings["financial summary"]
+    if balance and summary and balance[0] == summary[0] and balance[1] < summary[1]:
+        header_row = balance[0] + 4
+        left_headers = _date_columns_in_range(sheet, header_row, balance[1], summary[1] - 1)
+        right_headers = _date_columns_in_range(sheet, header_row, summary[1] + 1, sheet.max_column)
+        score += min(len(left_headers), 10) * 4
+        score += min(len(right_headers), 10) * 4
+    return score
+
+
 def _financial_sheet_for_months(workbook, months: tuple[tuple[int, int], ...]) -> str | None:
     if not months:
         return None
     year, month = months[-1]
     wanted_tokens = {
+        f"{month_name[month].lower()} {year}",
+        f"{month_name[month].lower()} {str(year)[-2:]}",
         f"{month_abbr[month].lower()} {year}",
         f"{month_abbr[month].lower()} {str(year)[-2:]}",
     }
-    for sheet_name in workbook.sheetnames:
-        normalised = " ".join(sheet_name.lower().strip().split())
-        if normalised in wanted_tokens:
-            return sheet_name
-    for sheet_name in workbook.sheetnames:
-        normalised = " ".join(sheet_name.lower().strip().split())
-        if month_abbr[month].lower() in normalised and str(year) in normalised:
-            return sheet_name
-    return workbook.sheetnames[-1] if workbook.sheetnames else None
+    scored = [
+        (_sheet_financial_score(workbook[sheet_name], wanted_tokens), index, sheet_name)
+        for index, sheet_name in enumerate(workbook.sheetnames)
+    ]
+    viable = [candidate for candidate in scored if candidate[0] >= 220]
+    if not viable:
+        return None
+    return max(viable, key=lambda candidate: (candidate[0], -candidate[1]))[2]
 
 
 def parse_financial_exhibits_workbook(
@@ -1290,17 +1335,31 @@ def parse_financial_exhibits_workbook(
             return None, ["No financial exhibit sheets found."]
         sheet = workbook[sheet_name]
         sections: list[dict[str, object]] = []
-        left_date_cols = _date_columns_in_range(sheet, 12, 4, 22)[-7:]
-        right_date_cols = _date_columns_in_range(sheet, 12, 24, sheet.max_column)[-7:]
+        balance_heading = _find_financial_heading(sheet, "Balance Sheet")
+        income_heading = _find_financial_heading(sheet, "Income Statement")
+        summary_heading = _find_financial_heading(sheet, "Financial Summary")
+        if balance_heading is None or income_heading is None or summary_heading is None:
+            return None, [f"`{sheet_name}` does not look like a financial exhibits sheet."]
+
+        balance_row, balance_col = balance_heading
+        income_row, income_col = income_heading
+        summary_row, summary_col = summary_heading
+        header_row = balance_row + 4
+        left_date_cols = _date_columns_in_range(sheet, header_row, balance_col, summary_col - 1)[-7:]
+        right_date_cols = _date_columns_in_range(sheet, header_row, summary_col + 1, sheet.max_column)[-7:]
         if not left_date_cols:
-            warnings.append("No financial statement date columns found on row 12.")
+            warnings.append(f"No financial statement date columns found on row {header_row}.")
         if not right_date_cols:
-            warnings.append("No financial summary date columns found on row 12.")
+            warnings.append(f"No financial summary date columns found on row {header_row}.")
+        expected_period = f"{month_abbr[months[-1][1]]}-{str(months[-1][0])[-2:]}" if months else ""
+        periods = [period for _col, period in (right_date_cols or left_date_cols)]
+        if expected_period and periods and expected_period not in periods:
+            warnings.append(f"Financial exhibits do not include the selected quarter period `{expected_period}`.")
 
         def append_statement_section(section_name: str, start_row: int, end_row: int) -> None:
             rows: list[dict[str, object]] = []
             for row in range(start_row, min(end_row, sheet.max_row) + 1):
-                label = _financial_label(sheet, row, (4, 5, 6))
+                label = _financial_label(sheet, row, (balance_col, balance_col + 1, balance_col + 2))
                 if not label:
                     continue
                 label_key = _normalise(label)
@@ -1318,8 +1377,8 @@ def parse_financial_exhibits_workbook(
             if rows:
                 sections.append({"section": section_name, "rows": rows})
 
-        append_statement_section("Balance Sheet", 13, 58)
-        append_statement_section("Income Statement", 63, min(sheet.max_row, 140))
+        append_statement_section("Balance Sheet", balance_row + 5, income_row - 2)
+        append_statement_section("Income Statement", income_row + 4, min(sheet.max_row, income_row + 85))
 
         summary_rows: list[dict[str, object]] = []
         summary_headings = {
@@ -1329,16 +1388,26 @@ def parse_financial_exhibits_workbook(
             "performance metrics",
             "carried interest",
         }
-        for row in range(13, min(sheet.max_row, 46) + 1):
-            label = _financial_label(sheet, row, (25,))
+        summary_section = ""
+        for row in range(summary_row + 5, min(sheet.max_row, summary_row + 45) + 1):
+            label = _financial_label(sheet, row, (summary_col,))
             if not label:
                 continue
             label_key = _normalise(label)
             if label_key in summary_headings:
+                summary_section = label_key
                 summary_rows.append({"label": label, "subsection": True, "values": []})
                 continue
+            ratio_style = None
+            if summary_section == "% of committed capital":
+                ratio_style = "percent"
+            elif summary_section == "performance metrics":
+                ratio_style = "percent" if "irr" in label_key else "multiple"
             values = [
-                {"period": period, "value": _format_exhibit_value(sheet.cell(row=row, column=col).value)}
+                {
+                    "period": period,
+                    "value": _format_exhibit_value(sheet.cell(row=row, column=col).value, ratio_style=ratio_style),
+                }
                 for col, period in right_date_cols
             ]
             if not any(value["value"] != "-" for value in values):
@@ -1358,7 +1427,7 @@ def parse_financial_exhibits_workbook(
             warnings.append("No usable financial exhibit rows found.")
         return {
             "source_sheet": sheet_name,
-            "periods": [period for _col, period in (right_date_cols or left_date_cols)],
+            "periods": periods,
             "sections": sections,
         }, warnings
     finally:
