@@ -57,6 +57,59 @@ function titleRuleStart(x, value, fontSize, isBold = false, fallback = 215) {
   return Math.min(1500, Math.max(fallback, x + estimateTextWidth(value, fontSize, isBold) + 34));
 }
 
+function reportPeriodLabel(report = {}) {
+  const months = report.months || [];
+  const lastMonth = months.length ? String(months[months.length - 1] || "") : "";
+  const match = lastMonth.match(/^([A-Za-z]{3})\s+(\d{2,4})$/);
+  if (!match) return "March 2026";
+  const monthNames = {
+    jan: "January",
+    feb: "February",
+    mar: "March",
+    apr: "April",
+    may: "May",
+    jun: "June",
+    jul: "July",
+    aug: "August",
+    sep: "September",
+    oct: "October",
+    nov: "November",
+    dec: "December",
+  };
+  const monthName = monthNames[match[1].toLowerCase()] || match[1];
+  const yearText = match[2].length === 2 ? `20${match[2]}` : match[2];
+  return `${monthName} ${yearText}`;
+}
+
+function reportPeriodUpper(report = {}) {
+  return reportPeriodLabel(report).toUpperCase();
+}
+
+function reportPeriodEndingText(report = {}) {
+  const period = reportPeriodLabel(report);
+  const parts = period.split(" ");
+  if (parts.length !== 2) return "For the period ending March 31, 2026";
+  const monthName = parts[0];
+  const year = Number(parts[1]);
+  const monthIndex = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ].indexOf(monthName);
+  if (monthIndex < 0 || !year) return `For the period ending ${period}`;
+  const endDay = new Date(year, monthIndex + 1, 0).getDate();
+  return `For the period ending ${monthName} ${endDay}, ${year}`;
+}
+
 function cleanMetricLabel(label) {
   const textValue = String(label || "").trim();
   const replacements = new Map([
@@ -151,9 +204,9 @@ function logo(parent, x, y, scale = 1) {
   b.strokeWeight = stroke;
 }
 
-async function commonHeader(frame, section, pageNumber) {
+async function commonHeader(frame, section, pageNumber, report = {}) {
   rect(frame, "layout.top_rule", 0, 0, PAGE_W, 6, GREEN);
-  await text(frame, "report.header", `Sarmayacar Ventures  |  ${section}  |  March 2026`, 46, 45, 800, 28, 16, { color: { r: 0.58, g: 0.58, b: 0.58 } });
+  await text(frame, "report.header", `Sarmayacar Ventures  |  ${section}  |  ${reportPeriodLabel(report)}`, 46, 45, 800, 28, 16, { color: { r: 0.58, g: 0.58, b: 0.58 } });
   logo(frame, 1622, 24, 1);
   line(frame, "layout.footer_rule", 46, 1048, 1608, LINE);
   await text(frame, "report.footer", "Strictly Confidential  |  Do Not Duplicate Or Distribute Without Permission", 48, 1072, 520, 22, 13, { color: GREEN });
@@ -161,7 +214,7 @@ async function commonHeader(frame, section, pageNumber) {
   await text(frame, "report.page_number", String(pageNumber).padStart(2, "0"), 1616, 1072, 38, 16, 12, { bold: true, color: WHITE, align: "CENTER" });
 }
 
-async function createCover(x, y) {
+async function createCover(x, y, report = {}) {
   const frame = createFrame("01 Cover", x, y);
   rect(frame, "layout.top_rule", 0, 0, PAGE_W, 6, GREEN);
   logo(frame, 817, 106, 1.25);
@@ -169,16 +222,16 @@ async function createCover(x, y) {
   rect(frame, "cover.title_panel", 479, 428, 744, 328, GREEN, 88);
   await text(frame, "cover.title", "QUARTERLY\nREPORT", 590, 506, 520, 132, 58, { color: WHITE, align: "CENTER", lineHeight: 108 });
   line(frame, "cover.title_rule", 708, 650, 282, WHITE);
-  await text(frame, "report.period", "MARCH 2026", 775, 672, 180, 32, 23, { color: WHITE, align: "CENTER" });
+  await text(frame, "report.period", reportPeriodUpper(report), 738, 672, 255, 32, 23, { color: WHITE, align: "CENTER" });
   rect(frame, "layout.bottom_bar", 0, 1041, PAGE_W, 69, GREEN);
   await text(frame, "report.footer", "Strictly Confidential  |  Do Not Duplicate Or Distribute Without Permission", 635, 1072, 460, 18, 13, { color: WHITE, align: "CENTER" });
   return frame;
 }
 
-async function createContents(x, y) {
+async function createContents(x, y, report = {}) {
   const frame = createFrame("02 Contents", x, y);
   rect(frame, "layout.left_rule", 0, 0, 6, PAGE_H, GREEN);
-  await text(frame, "contents.legal", "Sarmayacar Ventures Cooperatief U.A.\n(the \"Fund\" or \"SV\" or collectively with\nrelated Fund Manager entities\n\"Sarmayacar\" or the \"Firm\")\n\nMonthly Report\nFor the period ending March 31, 2026\n\n\nStrictly Confidential\nDo Not Duplicate Or Distribute Without Permission", 72, 76, 450, 330, 16, { color: MID });
+  await text(frame, "contents.legal", `Sarmayacar Ventures Cooperatief U.A.\n(the "Fund" or "SV" or collectively with\nrelated Fund Manager entities\n"Sarmayacar" or the "Firm")\n\nQuarterly Report\n${reportPeriodEndingText(report)}\n\n\nStrictly Confidential\nDo Not Duplicate Or Distribute Without Permission`, 72, 76, 450, 330, 16, { color: MID });
   await text(frame, "contents.title", "CONTENTS", 1070, 106, 460, 80, 58, { bold: true, color: { r: 0.82, g: 0.82, b: 0.82 } });
   await text(frame, "contents.highlights_page", "02", 1078, 203, 70, 26, 22, { bold: true, color: GREEN });
   await text(frame, "contents.highlights", "HIGHLIGHTS", 1078, 244, 250, 34, 24, { color: DARK });
@@ -194,9 +247,9 @@ async function createContents(x, y) {
   return frame;
 }
 
-async function createHighlights(x, y) {
+async function createHighlights(x, y, report = {}) {
   const frame = createFrame("03 Highlights", x, y);
-  await commonHeader(frame, "Investor Report", "02");
+  await commonHeader(frame, "Investor Report", "02", report);
   await text(frame, "highlights.title", "HIGHLIGHTS", 46, 99, 220, 42, 34, { color: GREEN });
   line(frame, "highlights.title_rule", 272, 115, 1382, GREEN);
   await text(frame, "highlights.investment_title", "Investment Activity", 50, 178, 420, 28, 21, { color: DARK });
@@ -208,9 +261,9 @@ async function createHighlights(x, y) {
   return frame;
 }
 
-async function createPortfolioTable(x, y) {
+async function createPortfolioTable(x, y, report = {}) {
   const frame = createFrame("04 Portfolio Table", x, y);
-  await commonHeader(frame, "Investor Report", "03");
+  await commonHeader(frame, "Investor Report", "03", report);
   await text(frame, "portfolio.title", "PORTFOLIO", 46, 99, 200, 42, 34, { color: GREEN });
   line(frame, "portfolio.title_rule", 248, 115, 1406, GREEN);
   const headers = ["Company", "Description", "First Cash\nInjection", "Ownership", "SV Board\nSeats", "Cost ($)", "Carrying\nValue ($)", "Unrealized\nGain/Loss ($)", "Realized\nGain/Loss ($)"];
@@ -224,9 +277,9 @@ async function createPortfolioTable(x, y) {
   return frame;
 }
 
-async function createCompanyTemplate(x, y) {
+async function createCompanyTemplate(x, y, report = {}) {
   const frame = createFrame("Company Page Template", x, y);
-  await commonHeader(frame, "Investor Report", "06");
+  await commonHeader(frame, "Investor Report", "06", report);
   await text(frame, "company.name", "COMPANY NAME", 46, 99, 360, 42, 34, { bold: true, color: GREEN });
   line(frame, "company.title_rule", 215, 119, 1418, GREEN);
   await text(frame, "company.description_heading", "Company Description", 46, 157, 300, 28, 21, { color: DARK });
@@ -258,9 +311,9 @@ async function createCompanyTemplate(x, y) {
   return frame;
 }
 
-async function createOperatorTemplate(x, y) {
+async function createOperatorTemplate(x, y, report = {}) {
   const frame = createFrame("Operator Angel Template", x, y);
-  await commonHeader(frame, "Investor Report", "21");
+  await commonHeader(frame, "Investor Report", "21", report);
   await text(frame, "operator.section_title", "OPERATOR ANGEL COMPANIES", 46, 99, 480, 42, 34, { color: GREEN });
   line(frame, "operator.section_rule", 542, 121, 1080, GREEN);
   await text(frame, "operator.company_1.name", "Company Name", 46, 185, 360, 40, 32, { bold: true, color: GREEN });
@@ -272,15 +325,34 @@ async function createOperatorTemplate(x, y) {
   return frame;
 }
 
-async function createFinancialExhibits(x, y) {
+async function createFinancialExhibits(x, y, report = {}) {
   const frame = createFrame("Financial Exhibits Template", x, y);
-  await commonHeader(frame, "Financial Exhibits", "26");
+  await commonHeader(frame, "Financial Exhibits", "26", report);
   await text(frame, "financial.title", "FINANCIAL EXHIBITS", 100, 111, 400, 42, 34, { color: GREEN });
   line(frame, "financial.title_rule", 460, 138, 1060, GREEN);
   rect(frame, "financial.summary_header", 88, 152, 1505, 52, GREEN, 10);
   await text(frame, "financial.summary_header_text", "Financial Summary", 112, 170, 400, 20, 13, { bold: true, color: WHITE });
   await text(frame, "financial.table_placeholder", "Financial exhibits will be mapped from fund finance inputs in Phase 3.", 112, 286, 1450, 80, 18, { color: MID });
   return frame;
+}
+
+function findFrameByName(name) {
+  return figma.currentPage.findOne((node) => node.name === name && node.type === "FRAME");
+}
+
+async function updateReportPeriodText(frame, report, warnings) {
+  if (!frame) return;
+  const nodes = collectNodesByName(frame);
+  if (nodes.has("report.period")) await setText(nodes, "report.period", reportPeriodUpper(report), warnings);
+  if (nodes.has("report.header")) {
+    const headerNode = nodes.get("report.header");
+    const existing = isTextNode(headerNode) ? headerNode.characters : "";
+    const section = String(existing).includes("Financial Exhibits") ? "Financial Exhibits" : "Investor Report";
+    await setText(nodes, "report.header", `Sarmayacar Ventures  |  ${section}  |  ${reportPeriodLabel(report)}`, warnings);
+  }
+  if (nodes.has("contents.legal")) {
+    await setText(nodes, "contents.legal", `Sarmayacar Ventures Cooperatief U.A.\n(the "Fund" or "SV" or collectively with\nrelated Fund Manager entities\n"Sarmayacar" or the "Firm")\n\nQuarterly Report\n${reportPeriodEndingText(report)}\n\n\nStrictly Confidential\nDo Not Duplicate Or Distribute Without Permission`, warnings);
+  }
 }
 
 async function createTemplateFrames() {
@@ -393,12 +465,12 @@ async function fillHighlights(data, warnings) {
   return frame;
 }
 
-async function createOperatorAngelPages(operatorAngels, startX, startY) {
+async function createOperatorAngelPages(operatorAngels, startX, startY, report = {}) {
   const created = [];
   const pageSize = 2;
   for (let page = 0; page < operatorAngels.length; page += pageSize) {
     const frame = createFrame(`Operator Angel Companies ${Math.floor(page / pageSize) + 1}`, startX + created.length * (PAGE_W + 90), startY);
-    await commonHeader(frame, "Investor Report", String(21 + created.length).padStart(2, "0"));
+    await commonHeader(frame, "Investor Report", String(21 + created.length).padStart(2, "0"), report);
     await text(frame, "operator.section_title", "OPERATOR ANGEL COMPANIES", 46, 99, 540, 42, 34, { color: GREEN });
     line(frame, "operator.section_rule", 542, 121, 1080, GREEN);
     const pair = operatorAngels.slice(page, page + pageSize);
@@ -418,13 +490,13 @@ async function createOperatorAngelPages(operatorAngels, startX, startY) {
   return created;
 }
 
-async function createFinancialExhibitPages(financialExhibits, startX, startY) {
+async function createFinancialExhibitPages(financialExhibits, startX, startY, report = {}) {
   if (!financialExhibits || !financialExhibits.sections) return [];
   const created = [];
   const periods = financialExhibits.periods || [];
   for (const section of financialExhibits.sections.slice(0, 8)) {
     const frame = createFrame(`Financial Exhibits - ${section.section || "Section"}`, startX + created.length * (PAGE_W + 90), startY);
-    await commonHeader(frame, "Financial Exhibits", String(26 + created.length).padStart(2, "0"));
+    await commonHeader(frame, "Financial Exhibits", String(26 + created.length).padStart(2, "0"), report);
     await text(frame, "financial.title", "FINANCIAL EXHIBITS", 100, 111, 420, 42, 34, { color: GREEN });
     line(frame, "financial.title_rule", 460, 138, 1060, GREEN);
     rect(frame, "financial.section_header", 88, 152, 1505, 52, GREEN, 10);
@@ -460,12 +532,38 @@ async function createFinancialExhibitPages(financialExhibits, startX, startY) {
   return created;
 }
 
-async function findOrCreateCompanyTemplate() {
+async function ensureReportFrontMatter(report, warnings) {
+  const frames = [];
+  let cover = findFrameByName("01 Cover");
+  if (!cover) cover = await createCover(0, 0, report);
+  await updateReportPeriodText(cover, report, warnings);
+  frames.push(cover);
+
+  let contents = findFrameByName("02 Contents");
+  if (!contents) contents = await createContents(PAGE_W + 90, 0, report);
+  await updateReportPeriodText(contents, report, warnings);
+  frames.push(contents);
+
+  let highlights = findFrameByName("03 Highlights");
+  if (!highlights) highlights = await createHighlights((PAGE_W + 90) * 2, 0, report);
+  await updateReportPeriodText(highlights, report, warnings);
+  frames.push(highlights);
+
+  let portfolio = findFrameByName("04 Portfolio Table");
+  if (!portfolio) portfolio = await createPortfolioTable(0, PAGE_H + 90, report);
+  await updateReportPeriodText(portfolio, report, warnings);
+  frames.push(portfolio);
+
+  return frames;
+}
+
+async function findOrCreateCompanyTemplate(report = {}) {
   const existing = figma.currentPage.findOne((node) => node.name === "Company Page Template");
   if (existing && ["FRAME", "COMPONENT", "INSTANCE"].includes(existing.type)) {
+    await updateReportPeriodText(existing, report, []);
     return existing;
   }
-  return await createCompanyTemplate(PAGE_W + 90, PAGE_H + 90);
+  return await createCompanyTemplate(PAGE_W + 90, PAGE_H + 90, report);
 }
 
 async function importCompanies(data) {
@@ -479,13 +577,14 @@ async function importCompanies(data) {
   }
 
   await ensureFonts();
-  const template = await findOrCreateCompanyTemplate();
   const report = data.report || {};
-  const spacing = template.width + 90;
   const warnings = [];
-  const created = [];
+  const frontMatterFrames = await ensureReportFrontMatter(report, warnings);
+  const template = await findOrCreateCompanyTemplate(report);
+  const spacing = template.width + 90;
+  const created = [...frontMatterFrames];
   const highlightFrame = await fillHighlights(data, warnings);
-  if (highlightFrame) created.push(highlightFrame);
+  if (highlightFrame && !created.includes(highlightFrame)) created.push(highlightFrame);
 
   for (let index = 0; index < companies.length; index += 1) {
     const company = companies[index];
@@ -499,8 +598,8 @@ async function importCompanies(data) {
   }
   const operatorStartX = template.x;
   const operatorStartY = template.y + PAGE_H + 90;
-  created.push(...await createOperatorAngelPages(operatorAngels, operatorStartX, operatorStartY));
-  created.push(...await createFinancialExhibitPages(data.financial_exhibits, operatorStartX, operatorStartY + PAGE_H + 90));
+  created.push(...await createOperatorAngelPages(operatorAngels, operatorStartX, operatorStartY, report));
+  created.push(...await createFinancialExhibitPages(data.financial_exhibits, operatorStartX, operatorStartY + PAGE_H + 90, report));
 
   figma.currentPage.selection = created;
   figma.viewport.scrollAndZoomIntoView(created);
