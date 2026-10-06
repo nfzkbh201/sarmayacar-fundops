@@ -48,6 +48,70 @@ function line(parent, name, x, y, w, color = GREEN) {
   rect(parent, name, x, y, w, 1, color);
 }
 
+function estimateTextWidth(value, fontSize, isBold = false) {
+  const textValue = String(value || "");
+  return textValue.length * fontSize * (isBold ? 0.66 : 0.58);
+}
+
+function titleRuleStart(x, value, fontSize, isBold = false, fallback = 215) {
+  return Math.min(1500, Math.max(fallback, x + estimateTextWidth(value, fontSize, isBold) + 34));
+}
+
+function cleanMetricLabel(label) {
+  const textValue = String(label || "").trim();
+  const replacements = new Map([
+    ["Revenue (New lines/codes)", "Revenue (New)"],
+    ["Revenue (Recurring lines/codes)", "Revenue (Recurring)"],
+    ["Software Development Cost", "Software Dev."],
+    ["Sales & Marketing", "Sales & Mktg."],
+    ["Rent & CAM / Renovation Costs", "Rent / Renovation"],
+    ["Admin & General Expenses", "Admin & General"],
+    ["Total Operating Expenses", "Total OpEx"],
+    ["Operational Rooms", "Op. Rooms"],
+    ["Occupancy Rate (%)", "Occupancy"],
+    ["Business Development", "Business Dev."],
+    ["Professional Fees", "Prof. Fees"],
+    ["Total No. of Transactions", "Total Transactions"],
+    ["Disbursement Transactions", "Disbursements"],
+  ]);
+  return replacements.get(textValue) || textValue;
+}
+
+function financialDisplayRows(section) {
+  const rows = section.rows || [];
+  if (String(section.section || "").toLowerCase() === "income statement") {
+    const segmentIndex = rows.findIndex((row) => String(row.label || "").trim().toLowerCase() === "segment");
+    return segmentIndex >= 0 ? rows.slice(0, segmentIndex) : rows;
+  }
+  return rows;
+}
+
+function cleanFinancialLabel(label) {
+  const textValue = String(label || "").trim();
+  const replacements = new Map([
+    ["Total amount of carried interest earned on realized investments", "Carry earned on realized investments"],
+    ["Total amount of carried interest earned accrued on unrealized investments", "Carry accrued on unrealized investments"],
+    ["Distribution to paid-in-capital (DPI)", "DPI"],
+    ["Residual value to paid-in-capital (RVPI)", "RVPI"],
+    ["Total Value to paid-in-capital (TVPI)", "TVPI"],
+    ["Capital Contributions Receivables", "Capital contributions receivable"],
+    ["Cash and Cash Equivalents", "Cash and cash equivalents"],
+    ["Total remaining available drawdown", "Remaining available drawdown"],
+    ["Total committed in portfolio companies", "Committed in portfolio companies"],
+  ]);
+  return replacements.get(textValue) || textValue;
+}
+
+function isFinancialSubheader(row) {
+  const values = row.values || [];
+  return Boolean(row.subsection) || !values.length;
+}
+
+function isFinancialTotal(label) {
+  const normalised = String(label || "").trim().toLowerCase();
+  return normalised.startsWith("total ") || normalised === "net income (loss)";
+}
+
 async function text(parent, name, value, x, y, w, h, size, options = {}) {
   const node = figma.createText();
   node.name = name;
@@ -174,18 +238,18 @@ async function createCompanyTemplate(x, y) {
   }
   await text(frame, "metrics.heading", "Key Financial & Operating Metrics", 48, 439, 400, 28, 21, { color: DARK });
   await text(frame, "metrics.units", "(Numbers in 000's)", 50, 466, 190, 20, 13, { color: MID });
-  const startX = 214;
+  const startX = 345;
   const startY = 494;
-  const monthW = 238;
+  const monthW = 205;
   for (let m = 1; m <= 6; m += 1) {
     rect(frame, `metric_month_${m}.header_bg`, startX + (m - 1) * monthW, startY, monthW - 5, 42, GREEN);
     await text(frame, `metric_month_${m}.label`, `Month ${m}`, startX + (m - 1) * monthW, startY + 10, monthW - 5, 20, 16, { color: WHITE, align: "CENTER" });
   }
   for (let r = 1; r <= 10; r += 1) {
     const yRow = 550 + (r - 1) * 25;
-    await text(frame, `metric_${r}.label`, r <= 7 ? `Metric ${r}` : "", 50, yRow, 160, 20, 14, { color: DARK });
+    await text(frame, `metric_${r}.label`, r <= 7 ? `Metric ${r}` : "", 50, yRow, 280, 20, 13, { color: DARK });
     for (let m = 1; m <= 6; m += 1) {
-      await text(frame, `metric_${r}.month_${m}`, "", startX + (m - 1) * monthW + 20, yRow, monthW - 42, 20, 14, { color: DARK, align: "RIGHT" });
+      await text(frame, `metric_${r}.month_${m}`, "", startX + (m - 1) * monthW + 20, yRow, monthW - 32, 20, 13, { color: DARK, align: "RIGHT" });
     }
   }
   line(frame, "metrics.bottom_rule", 46, 967, 1610, { r: 0.18, g: 0.18, b: 0.18 });
@@ -279,6 +343,12 @@ async function setText(namedNodes, fieldName, value, warnings) {
 async function fillCompanyFrame(frame, company, report, warnings) {
   const nodes = collectNodesByName(frame);
   await setText(nodes, "company.name", (company.name || "").toUpperCase(), warnings);
+  const titleRule = nodes.get("company.title_rule");
+  if (titleRule && "resize" in titleRule) {
+    const start = titleRuleStart(46, (company.name || "").toUpperCase(), 34, true, 215);
+    titleRule.x = start;
+    titleRule.resize(Math.max(80, 1654 - start), titleRule.height);
+  }
   await setText(nodes, "company.description", company.description || "", warnings);
   await setText(nodes, "notes.disclaimer", company.notes || "", warnings);
 
@@ -295,7 +365,7 @@ async function fillCompanyFrame(frame, company, report, warnings) {
   const metrics = company.metrics || [];
   for (let metricIndex = 1; metricIndex <= 10; metricIndex += 1) {
     const metric = metrics[metricIndex - 1] || {};
-    await setText(nodes, `metric_${metricIndex}.label`, metric.label || "", warnings);
+    await setText(nodes, `metric_${metricIndex}.label`, cleanMetricLabel(metric.label), warnings);
     const values = metric.values || [];
     for (let monthIndex = 1; monthIndex <= 6; monthIndex += 1) {
       const value = values[monthIndex - 1] || {};
@@ -336,7 +406,8 @@ async function createOperatorAngelPages(operatorAngels, startX, startY) {
       const company = pair[i];
       const yBase = 185 + i * 365;
       await text(frame, `operator.company_${i + 1}.name`, company.name || "", 46, yBase, 420, 40, 32, { bold: true, color: GREEN });
-      line(frame, `operator.company_${i + 1}.rule`, 422, yBase + 16, 1200, GREEN);
+      const ruleStart = titleRuleStart(46, company.name || "", 32, true, 422);
+      line(frame, `operator.company_${i + 1}.rule`, ruleStart, yBase + 16, Math.max(80, 1622 - ruleStart), GREEN);
       await text(frame, `operator.company_${i + 1}.description_heading`, "Company Description", 46, yBase + 56, 300, 28, 21, { color: DARK });
       await text(frame, `operator.company_${i + 1}.description`, company.description || "", 46, yBase + 97, 1500, 70, 16, { color: MID, lineHeight: 170 });
       await text(frame, `operator.company_${i + 1}.updates_heading`, "Key Updates", 46, yBase + 176, 240, 28, 21, { color: DARK });
@@ -360,20 +431,29 @@ async function createFinancialExhibitPages(financialExhibits, startX, startY) {
     await text(frame, "financial.section_header_text", section.section || "Financial Summary", 112, 170, 900, 20, 13, { bold: true, color: WHITE });
     await text(frame, "financial.units", "In USD $ 000's\nUnaudited figures", 112, 216, 260, 42, 14, { color: { r: 0.58, g: 0.58, b: 0.58 } });
     const labelX = 112;
-    const y0 = 286;
-    const colW = 132;
-    for (let c = 0; c < periods.length; c += 1) {
-      await text(frame, `financial.period_${c + 1}`, periods[c], 660 + c * colW, y0, colW - 8, 20, 13, { bold: true, color: MID, align: "RIGHT" });
+    const y0 = 298;
+    const labelW = 610;
+    const maxCols = Math.min(periods.length, 7);
+    const colW = 116;
+    const colStart = labelX + labelW;
+    for (let c = 0; c < maxCols; c += 1) {
+      await text(frame, `financial.period_${c + 1}`, periods[c], colStart + c * colW, y0, colW - 8, 20, 13, { bold: true, color: MID, align: "RIGHT" });
     }
-    const rows = section.rows || [];
-    for (let r = 0; r < Math.min(rows.length, 30); r += 1) {
+    const rows = financialDisplayRows(section);
+    const rowLimit = String(section.section || "").toLowerCase() === "financial summary" ? 34 : 31;
+    const rowH = rows.length > 28 ? 22 : 25;
+    line(frame, "financial.header_rule", labelX, y0 + 31, 1480, LINE);
+    for (let r = 0; r < Math.min(rows.length, rowLimit); r += 1) {
       const row = rows[r];
-      const y = y0 + 34 + r * 25;
-      await text(frame, `financial.row_${r + 1}.label`, row.label || "", labelX, y, 480, 20, 13, { color: MID });
+      const y = y0 + 48 + r * rowH;
+      const subheader = isFinancialSubheader(row);
+      const total = isFinancialTotal(row.label);
+      await text(frame, `financial.row_${r + 1}.label`, cleanFinancialLabel(row.label), labelX, y, labelW - 18, 18, subheader ? 13 : 12, { bold: subheader || total, color: subheader ? GREEN : MID });
       const values = row.values || [];
-      for (let c = 0; c < Math.min(values.length, periods.length); c += 1) {
-        await text(frame, `financial.row_${r + 1}.value_${c + 1}`, values[c].value || "", 660 + c * colW, y, colW - 8, 20, 13, { color: MID, align: "RIGHT" });
+      for (let c = 0; c < Math.min(values.length, maxCols); c += 1) {
+        await text(frame, `financial.row_${r + 1}.value_${c + 1}`, values[c].value || "", colStart + c * colW, y, colW - 8, 18, 12, { bold: total, color: MID, align: "RIGHT" });
       }
+      if (total) line(frame, `financial.row_${r + 1}.rule`, labelX, y + 22, 1480, LINE);
     }
     created.push(frame);
   }

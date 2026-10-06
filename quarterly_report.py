@@ -1363,6 +1363,8 @@ def parse_financial_exhibits_workbook(
                 if not label:
                     continue
                 label_key = _normalise(label)
+                if section_name == "Income Statement" and label_key == "segment":
+                    break
                 if label_key in {_normalise(section_name), "in usd $ 000's", "investments at fair value"}:
                     continue
                 values = [
