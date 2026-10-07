@@ -261,20 +261,93 @@ async function createHighlights(x, y, report = {}) {
   return frame;
 }
 
-async function createPortfolioTable(x, y, report = {}) {
-  const frame = createFrame("04 Portfolio Table", x, y);
-  await commonHeader(frame, "Investor Report", "03", report);
-  await text(frame, "portfolio.title", "PORTFOLIO", 46, 99, 200, 42, 34, { color: GREEN });
-  line(frame, "portfolio.title_rule", 248, 115, 1406, GREEN);
+function splitPortfolioRows(summary = {}) {
+  const rows = Array.isArray(summary.rows) ? summary.rows : [];
+  const portfolioRows = rows.filter((row) => String(row.section || "").toLowerCase() !== "operator angel");
+  const operatorRows = rows.filter((row) => String(row.section || "").toLowerCase() === "operator angel");
+  return [
+    { title: "04 Portfolio", pageNumber: "03", portfolioRows: portfolioRows.slice(0, 10), operatorRows: [] },
+    { title: "05 Portfolio Continued", pageNumber: "04", portfolioRows: portfolioRows.slice(10), operatorRows: operatorRows.slice(0, 3), totalKey: "portfolio_totals" },
+    { title: "06 Portfolio Operator Angels", pageNumber: "05", portfolioRows: [], operatorRows: operatorRows.slice(3), totalKey: "totals" },
+  ].filter((page) => page.portfolioRows.length || page.operatorRows.length);
+}
+
+async function renderPortfolioHeaders(frame, y, prefix) {
   const headers = ["Company", "Description", "First Cash\nInjection", "Ownership", "SV Board\nSeats", "Cost ($)", "Carrying\nValue ($)", "Unrealized\nGain/Loss ($)", "Realized\nGain/Loss ($)"];
   const xs = [46, 174, 563, 704, 874, 1038, 1202, 1358, 1509];
   const widths = [124, 386, 136, 164, 158, 160, 153, 147, 141];
   for (let i = 0; i < headers.length; i += 1) {
-    rect(frame, `portfolio.header_${i + 1}`, xs[i], 158, widths[i], 62, GREEN, 2);
-    await text(frame, `portfolio.header_${i + 1}.text`, headers[i], xs[i] + 8, 172, widths[i] - 16, 40, 16, { color: WHITE, align: i > 1 ? "CENTER" : "LEFT" });
+    rect(frame, `${prefix}.header_${i + 1}`, xs[i], y, widths[i], 62, GREEN, 2);
+    await text(frame, `${prefix}.header_${i + 1}.text`, headers[i], xs[i] + 8, y + 14, widths[i] - 16, 40, 16, { color: WHITE, align: i > 1 ? "CENTER" : "LEFT" });
   }
-  await text(frame, "portfolio.rows", "Portfolio table rows will be mapped from a separate portfolio input file in Phase 3.", 52, 244, 1500, 60, 18, { color: MID });
+}
+
+async function renderPortfolioRows(frame, rows, startY, prefix, totals = null) {
+  const xs = [46, 174, 563, 704, 874, 1038, 1202, 1358, 1509];
+  const widths = [124, 386, 136, 164, 158, 160, 153, 147, 141];
+  const rowH = 72;
+  for (let r = 0; r < rows.length; r += 1) {
+    const row = rows[r] || {};
+    const y = startY + r * rowH;
+    if (r % 2 === 0) rect(frame, `${prefix}.row_${r + 1}.bg`, 46, y - 4, 1608, rowH, { r: 0.96, g: 0.96, b: 0.96 });
+    await text(frame, `${prefix}.row_${r + 1}.company`, row.name || "", xs[0] + 8, y + 8, widths[0] - 16, rowH - 8, 15, { bold: true, color: MID, lineHeight: 122 });
+    await text(frame, `${prefix}.row_${r + 1}.description`, row.description || "", xs[1] + 12, y + 8, widths[1] - 22, rowH - 8, 15, { color: MID, lineHeight: 128 });
+    await text(frame, `${prefix}.row_${r + 1}.first_cash`, row.first_cash_injection || "-", xs[2], y + 8, widths[2], 24, 15, { color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.row_${r + 1}.ownership`, row.ownership || "-", xs[3], y + 8, widths[3], 24, 15, { color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.row_${r + 1}.board`, row.sv_board_seats || "-", xs[4], y + 8, widths[4], 24, 15, { color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.row_${r + 1}.cost`, row.cost || "-", xs[5], y + 8, widths[5], 24, 15, { color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.row_${r + 1}.carrying`, row.carrying_value || "-", xs[6], y + 8, widths[6], 24, 15, { color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.row_${r + 1}.unrealized`, row.unrealized_gain_loss || "-", xs[7], y + 8, widths[7], 24, 15, { color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.row_${r + 1}.realized`, row.realized_gain_loss || "-", xs[8], y + 8, widths[8], 24, 15, { color: MID, align: "CENTER" });
+  }
+  const afterRowsY = startY + rows.length * rowH;
+  if (totals && rows.length) {
+    line(frame, `${prefix}.total_rule`, 46, afterRowsY + 3, 1608, DARK);
+    rect(frame, `${prefix}.total_bg`, 46, afterRowsY + 6, 1608, 30, LIGHT);
+    await text(frame, `${prefix}.total_label`, "Total", 62, afterRowsY + 10, 140, 18, 16, { bold: true, color: MID });
+    await text(frame, `${prefix}.total_cost`, totals.cost || "-", xs[5], afterRowsY + 10, widths[5], 18, 15, { bold: true, color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.total_carrying`, totals.carrying_value || "-", xs[6], afterRowsY + 10, widths[6], 18, 15, { bold: true, color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.total_unrealized`, totals.unrealized_gain_loss || "-", xs[7], afterRowsY + 10, widths[7], 18, 15, { bold: true, color: MID, align: "CENTER" });
+    await text(frame, `${prefix}.total_realized`, totals.realized_gain_loss || "-", xs[8], afterRowsY + 10, widths[8], 18, 15, { bold: true, color: MID, align: "CENTER" });
+    return afterRowsY + 52;
+  }
+  return afterRowsY + 12;
+}
+
+async function createPortfolioPage(x, y, report = {}, page = {}, summary = {}) {
+  const frame = createFrame(page.title || "04 Portfolio", x, y);
+  await commonHeader(frame, "Investor Report", page.pageNumber || "03", report);
+  await text(frame, "portfolio.title", "PORTFOLIO", 46, 99, 200, 42, 34, { color: GREEN });
+  line(frame, "portfolio.title_rule", 248, 115, 1406, GREEN);
+  await renderPortfolioHeaders(frame, 158, "portfolio");
+  let nextY = 232;
+  const pageTotals = page.totalKey ? summary[page.totalKey] : null;
+  if (page.portfolioRows && page.portfolioRows.length) {
+    nextY = await renderPortfolioRows(frame, page.portfolioRows, nextY, "portfolio.company", pageTotals);
+    if (pageTotals && summary.note) {
+      await text(frame, "portfolio.note", summary.note, 52, nextY + 8, 1200, 28, 16, { color: { r: 0.56, g: 0.56, b: 0.56 } });
+      nextY += 62;
+    }
+  }
+  if (page.operatorRows && page.operatorRows.length) {
+    await text(frame, "portfolio.operator_title", "OPERATOR ANGEL COMPANIES", 46, nextY + 6, 700, 42, 34, { color: GREEN });
+    nextY += 72;
+    await renderPortfolioRows(frame, page.operatorRows, nextY, "portfolio.operator", pageTotals && !(page.portfolioRows || []).length ? pageTotals : null);
+  }
   return frame;
+}
+
+async function createPortfolioPages(x, y, report = {}, summary = {}) {
+  const pages = splitPortfolioRows(summary);
+  if (!pages.length) {
+    return [await createPortfolioPage(x, y, report, { title: "04 Portfolio", pageNumber: "03", portfolioRows: [], operatorRows: [] }, summary)];
+  }
+  const frames = [];
+  for (let i = 0; i < pages.length; i += 1) {
+    const frame = await createPortfolioPage(x + i * (PAGE_W + 90), y, report, pages[i], summary);
+    frames.push(frame);
+  }
+  return frames;
 }
 
 async function createCompanyTemplate(x, y, report = {}) {
@@ -340,6 +413,12 @@ function findFrameByName(name) {
   return figma.currentPage.findOne((node) => node.name === name && node.type === "FRAME");
 }
 
+function removeFramesByNames(names) {
+  const wanted = new Set(names);
+  const frames = figma.currentPage.findAll((node) => node.type === "FRAME" && wanted.has(node.name));
+  for (const frame of frames) frame.remove();
+}
+
 async function updateReportPeriodText(frame, report, warnings) {
   if (!frame) return;
   const nodes = collectNodesByName(frame);
@@ -362,7 +441,7 @@ async function createTemplateFrames() {
   frames.push(await createCover(0, 0));
   frames.push(await createContents(PAGE_W + gap, 0));
   frames.push(await createHighlights((PAGE_W + gap) * 2, 0));
-  frames.push(await createPortfolioTable(0, PAGE_H + gap));
+  frames.push(...await createPortfolioPages(0, PAGE_H + gap));
   frames.push(await createCompanyTemplate(PAGE_W + gap, PAGE_H + gap));
   frames.push(await createOperatorTemplate((PAGE_W + gap) * 2, PAGE_H + gap));
   frames.push(await createFinancialExhibits(0, (PAGE_H + gap) * 2));
@@ -532,7 +611,7 @@ async function createFinancialExhibitPages(financialExhibits, startX, startY, re
   return created;
 }
 
-async function ensureReportFrontMatter(report, warnings) {
+async function ensureReportFrontMatter(report, warnings, portfolioSummary = {}) {
   const frames = [];
   let cover = findFrameByName("01 Cover");
   if (!cover) cover = await createCover(0, 0, report);
@@ -549,10 +628,8 @@ async function ensureReportFrontMatter(report, warnings) {
   await updateReportPeriodText(highlights, report, warnings);
   frames.push(highlights);
 
-  let portfolio = findFrameByName("04 Portfolio Table");
-  if (!portfolio) portfolio = await createPortfolioTable(0, PAGE_H + 90, report);
-  await updateReportPeriodText(portfolio, report, warnings);
-  frames.push(portfolio);
+  removeFramesByNames(["04 Portfolio Table", "04 Portfolio", "05 Portfolio Continued", "06 Portfolio Operator Angels"]);
+  frames.push(...await createPortfolioPages(0, PAGE_H + 90, report, portfolioSummary));
 
   return frames;
 }
@@ -561,9 +638,12 @@ async function findOrCreateCompanyTemplate(report = {}) {
   const existing = figma.currentPage.findOne((node) => node.name === "Company Page Template");
   if (existing && ["FRAME", "COMPONENT", "INSTANCE"].includes(existing.type)) {
     await updateReportPeriodText(existing, report, []);
+    existing.visible = false;
     return existing;
   }
-  return await createCompanyTemplate(PAGE_W + 90, PAGE_H + 90, report);
+  const template = await createCompanyTemplate(PAGE_W + 90, PAGE_H + 90, report);
+  template.visible = false;
+  return template;
 }
 
 async function importCompanies(data) {
@@ -579,7 +659,7 @@ async function importCompanies(data) {
   await ensureFonts();
   const report = data.report || {};
   const warnings = [];
-  const frontMatterFrames = await ensureReportFrontMatter(report, warnings);
+  const frontMatterFrames = await ensureReportFrontMatter(report, warnings, data.portfolio_summary || {});
   const template = await findOrCreateCompanyTemplate(report);
   const spacing = template.width + 90;
   const created = [...frontMatterFrames];
@@ -590,6 +670,7 @@ async function importCompanies(data) {
     const company = companies[index];
     const clone = template.clone();
     clone.name = `${company.name || "Company"} - ${report.quarter || "Quarterly Report"}`;
+    clone.visible = true;
     clone.x = template.x + spacing * (index + 1);
     clone.y = template.y;
     template.parent.appendChild(clone);

@@ -51,6 +51,269 @@ HIGHLIGHT_ROWS = (
     ("Other Firm Matters", "Firm-level bullets for the first highlights page."),
 )
 
+PORTFOLIO_SUMMARY_ROWS = (
+    {
+        "name": "Trukker",
+        "description": "Trukker is a tech enabled truck aggregator that services businesses and consumers",
+        "first_cash_injection": "Jan-21",
+        "ownership": "0.4%",
+        "sv_board_seats": "None",
+        "cost": 500000,
+        "source_label": "Trukker",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "SimPaisa",
+        "description": "A digital payments platform enabling app monetization and fund disbursements via a single API",
+        "first_cash_injection": "Feb-18",
+        "ownership": "10.0%",
+        "sv_board_seats": "1 out of 4",
+        "cost": 128809,
+        "source_label": "Simpaisa",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Abhi",
+        "description": "Abhi is building Pakistan's first financial wellness platform, offering early wage access, invoice factoring and SME financing solutions",
+        "first_cash_injection": "May-21",
+        "ownership": "6.5%",
+        "sv_board_seats": "1 out of 5",
+        "cost": 1250000,
+        "source_label": "AbhiFinance",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Bykea",
+        "description": "Largest motorbike-based ride-hailing and logistics platform, serving over 20 million users across Karachi, Lahore, and Islamabad",
+        "first_cash_injection": "Feb-19",
+        "ownership": "6.9%",
+        "sv_board_seats": "1 out of 7",
+        "cost": 3600000,
+        "source_label": "Bykea",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Oladoc",
+        "description": "A digital healthcare platform for booking doctors' appointments",
+        "first_cash_injection": "Jan-22",
+        "ownership": "9.3%",
+        "sv_board_seats": "1 out of 5",
+        "cost": 1000000,
+        "source_label": "Oladoc",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "TapMad",
+        "description": "Tapmad is an in-house streaming platform that provides Advertising-based Video on Demand and Subscription Video on Demand services",
+        "first_cash_injection": "Sep-23",
+        "ownership": "5.0%",
+        "sv_board_seats": "Observer Seat",
+        "cost": 650000,
+        "source_label": "Tapmad",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Revolving Games",
+        "description": "Mobile game studio developing scalable Web3 games with deep strategy, and a growing focus on blockchain gaming",
+        "first_cash_injection": "Jul-19",
+        "ownership": "7.5%",
+        "sv_board_seats": "1 out of 3",
+        "cost": 1200000,
+        "source_label": "Revolving Games",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "OneLoad",
+        "description": "Digital financial services app enabling airtime top-ups, balance transfers, and utility bill payments through a retail partner network",
+        "first_cash_injection": "Jan-22",
+        "ownership": "8.5%",
+        "sv_board_seats": "Observer Seat",
+        "cost": 2000000,
+        "source_label": "OneLoad",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Jiye Technologies",
+        "description": "Closed-loop agri-fintech platform delivering seed-to-harvest solutions and farmer-focused financial products",
+        "first_cash_injection": "Dec-21",
+        "ownership": "8.4%",
+        "sv_board_seats": "1 out of 4",
+        "cost": 750000,
+        "source_label": "Jiye Tech",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Roomy",
+        "description": "Roomy partners with hotel owners to renovate their properties and manages them on a revenue-sharing or fixed rental basis",
+        "first_cash_injection": "Nov-22",
+        "ownership": "1.6%",
+        "sv_board_seats": "Observer Seat",
+        "cost": 400000,
+        "source_label": "Roomy",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Procheck",
+        "description": "A track and trace solution provider that also offers analytics to create efficiency across the value chain for manufacturers",
+        "first_cash_injection": "Apr-17",
+        "ownership": "13.5%",
+        "sv_board_seats": "1 out of 2",
+        "cost": 346000,
+        "source_label": "Procheck 1",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Patari (Inactive)",
+        "description": "Pakistani music streaming platform promoting local artists and regional audio content",
+        "first_cash_injection": "Jan-17",
+        "ownership": "24.3%",
+        "sv_board_seats": "1 out of 5",
+        "cost": 188252,
+        "source_label": "Patari",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Dot & Line",
+        "description": "After-school learning platform that enables stay at home women to become teachers for grade school children",
+        "first_cash_injection": "May-19",
+        "ownership": "17.4%",
+        "sv_board_seats": "1 out of 3",
+        "cost": 231910,
+        "source_label": "Dot & Line",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Dawaai",
+        "description": "An online-pharmacy business that serves both retail pharmacies and end consumers",
+        "first_cash_injection": "Dec-19",
+        "ownership": "9.0%",
+        "sv_board_seats": "1 out of 4",
+        "cost": 2030000,
+        "source_label": "Dawaai",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Jugnu (Inactive)",
+        "description": "A B2B e-commerce player whose offering is targeted towards kiryana stores",
+        "first_cash_injection": "Aug-21",
+        "ownership": "5.1%",
+        "sv_board_seats": "1 out of 6",
+        "cost": 2000000,
+        "source_label": "Jugnu",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Buyzilla (Inactive)",
+        "description": "An ecommerce platform of discounted fashion products from local brands",
+        "first_cash_injection": "Jan-21",
+        "ownership": "6.7%",
+        "sv_board_seats": "1 out of 4",
+        "cost": 175000,
+        "source_label": "Buyzilla 2",
+        "section": SECTION_PORTFOLIO_COMPANY,
+    },
+    {
+        "name": "Taraki",
+        "description": "An upskilling and professional networking platform geared towards to the local market",
+        "first_cash_injection": "Dec-21",
+        "ownership": "1.8%",
+        "sv_board_seats": "None",
+        "cost": 100000,
+        "source_label": "Bolandi",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "Savvy Technologies",
+        "description": "A social marketplace for freelancers; also now merged with a youth recruitment platform for hiring interns and freelance contractors",
+        "first_cash_injection": "Dec-21",
+        "ownership": "0.5%",
+        "sv_board_seats": "None",
+        "cost": 25000,
+        "source_label": "Savvy",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "Delsys Technologies",
+        "description": "Delsys is an on-demand fuel delivery service",
+        "first_cash_injection": "Jan-22",
+        "ownership": "2.5%",
+        "sv_board_seats": "None",
+        "cost": 25000,
+        "source_label": "Delsys Technologies",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "Startup Early (Holistiq)",
+        "description": "An Ed-Tech platform to track, assess, and generate standardized co-curricular reports",
+        "first_cash_injection": "Mar-22",
+        "ownership": "1.5%",
+        "sv_board_seats": "None",
+        "cost": 75000,
+        "source_label": "Startup Early",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "Scholar Den",
+        "description": "Scholar Den is an AI-driven test prep platform working with a subscription model",
+        "first_cash_injection": "May-22",
+        "ownership": "1.3%",
+        "sv_board_seats": "None",
+        "cost": 50000,
+        "source_label": "Scholar Den",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "House Call (Inactive)",
+        "description": "House Call is a mobile dentistry service",
+        "first_cash_injection": "May-22",
+        "ownership": "3.2%",
+        "sv_board_seats": "None",
+        "cost": 25000,
+        "source_label": "House Call",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "Orko",
+        "description": "An Operating System that provides integrated EV charging solutions",
+        "first_cash_injection": "Aug-22",
+        "ownership": "1.7%",
+        "sv_board_seats": "None",
+        "cost": 50000,
+        "source_label": "Orko",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "L.L.M.Bots",
+        "description": "LLMBots (Previously Truckistan) is an AI-powered Bots provider",
+        "first_cash_injection": "Sep-22",
+        "ownership": "0.3%",
+        "sv_board_seats": "None",
+        "cost": 75000,
+        "source_label": "Truckistan",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "Aabshar",
+        "description": "Aabshar is an impact initiative aimed at providing water-saving solutions for all users",
+        "first_cash_injection": "Oct-22",
+        "ownership": "0.5%",
+        "sv_board_seats": "None",
+        "cost": 25000,
+        "source_label": "Aabshar",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+    {
+        "name": "Raptr Games",
+        "description": "A gaming platform that enables publishing, and gamer monetization through a payment wallet ecosystem",
+        "first_cash_injection": "Oct-23",
+        "ownership": "0.5%",
+        "sv_board_seats": "None",
+        "cost": 25000,
+        "source_label": "Raptr",
+        "section": SECTION_OPERATOR_ANGEL,
+    },
+)
+
 MAX_BULLETS = 4
 MAX_COMMENTARY_BULLETS = 12
 MAX_BULLET_CHARS = 190
@@ -1436,6 +1699,112 @@ def parse_financial_exhibits_workbook(
         workbook.close()
 
 
+def _money_to_number(value: object) -> int | None:
+    text = str(value or "").strip()
+    if not text or text == "-":
+        return None
+    negative = text.startswith("(") and text.endswith(")")
+    cleaned = re.sub(r"[^0-9.\-]", "", text)
+    if not cleaned or cleaned == "-":
+        return None
+    try:
+        amount = float(cleaned)
+    except ValueError:
+        return None
+    if negative:
+        amount = -amount
+    return int(round(amount))
+
+
+def _format_portfolio_money(value: int | None) -> str:
+    if value is None:
+        return "-"
+    if value < 0:
+        return f"$({abs(value):,})"
+    return f"${value:,}"
+
+
+def _latest_balance_values(financial_exhibits: dict[str, object] | None) -> dict[str, int]:
+    if not financial_exhibits:
+        return {}
+    sections = financial_exhibits.get("sections")
+    if not isinstance(sections, list):
+        return {}
+    values_by_label: dict[str, int] = {}
+    for section in sections:
+        if not isinstance(section, dict) or section.get("section") != "Balance Sheet":
+            continue
+        rows = section.get("rows")
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            label = str(row.get("label") or "").strip()
+            values = row.get("values")
+            if not label or not isinstance(values, list) or not values:
+                continue
+            latest = values[-1]
+            if not isinstance(latest, dict):
+                continue
+            latest_value = _money_to_number(latest.get("value"))
+            if latest_value is None:
+                continue
+            values_by_label[_normalise(label)] = latest_value * 1000
+    return values_by_label
+
+
+def _portfolio_summary_data(financial_exhibits: dict[str, object] | None) -> dict[str, object]:
+    latest_values = _latest_balance_values(financial_exhibits)
+    rows: list[dict[str, object]] = []
+    total_keys = ("cost", "carrying_value", "unrealized_gain_loss", "realized_gain_loss")
+    all_totals = {
+        "cost": 0,
+        "carrying_value": 0,
+        "unrealized_gain_loss": 0,
+        "realized_gain_loss": 0,
+    }
+    portfolio_totals = {key: 0 for key in total_keys}
+    for row in PORTFOLIO_SUMMARY_ROWS:
+        cost = int(row["cost"])
+        carrying_value = latest_values.get(_normalise(row["source_label"]))
+        unrealized = carrying_value - cost if carrying_value is not None else None
+        realized = 0
+        rows.append(
+            {
+                "name": row["name"],
+                "description": row["description"],
+                "first_cash_injection": row["first_cash_injection"],
+                "ownership": row["ownership"],
+                "sv_board_seats": row["sv_board_seats"],
+                "cost": _format_portfolio_money(cost),
+                "carrying_value": _format_portfolio_money(carrying_value),
+                "unrealized_gain_loss": _format_portfolio_money(unrealized),
+                "realized_gain_loss": _format_portfolio_money(realized),
+                "section": row["section"],
+            }
+        )
+        row_totals = portfolio_totals if row["section"] == SECTION_PORTFOLIO_COMPANY else None
+        all_totals["cost"] += cost
+        if row_totals is not None:
+            row_totals["cost"] += cost
+        if carrying_value is not None:
+            all_totals["carrying_value"] += carrying_value
+            all_totals["unrealized_gain_loss"] += unrealized or 0
+            if row_totals is not None:
+                row_totals["carrying_value"] += carrying_value
+                row_totals["unrealized_gain_loss"] += unrealized or 0
+        all_totals["realized_gain_loss"] += realized
+        if row_totals is not None:
+            row_totals["realized_gain_loss"] += realized
+    return {
+        "note": "*Note: Carrying value of each portfolio company is based on the last completed financing round",
+        "rows": rows,
+        "portfolio_totals": {key: _format_portfolio_money(value) for key, value in portfolio_totals.items()},
+        "totals": {key: _format_portfolio_money(value) for key, value in all_totals.items()},
+    }
+
+
 def build_figma_data_pack(
     companies: tuple[CompanyReportData, ...],
     review_rows: list[dict[str, object]],
@@ -1524,6 +1893,7 @@ def build_figma_data_pack(
             },
         },
         "highlights": highlight_sections,
+        "portfolio_summary": _portfolio_summary_data(financial_exhibits),
         "companies": report_companies,
         "operator_angels": operator_angels,
         "financial_exhibits": financial_exhibits,
