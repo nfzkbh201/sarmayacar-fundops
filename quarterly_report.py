@@ -540,6 +540,7 @@ class CompanyReportData:
     description: str
     key_updates: tuple[str, ...]
     metrics: tuple[MetricRow, ...]
+    metric_sections: tuple[dict[str, object], ...]
     qoq_changes: tuple[dict[str, object], ...]
     warnings: tuple[str, ...]
 
@@ -942,6 +943,140 @@ def _extract_metrics(
     return selected, tuple(warnings)
 
 
+COMPANY_METRIC_SECTION_MAP: dict[str, tuple[dict[str, object], ...]] = {
+    "SimPaisa": (
+        {
+            "title": "Key Financial & Operating Metrics",
+            "units": "(Numbers in 000's)",
+            "scale": "thousands",
+            "rows": (
+                ("Total GTV", "GTV"),
+                ("Net Revenue", "Net Revenue"),
+                ("Salaries", "Salaries"),
+                ("SG&A", "SG&A"),
+                ("Business Development", "Business Development"),
+                ("Professional Fees", "Professional Fees"),
+                ("Other expenses", "Other expenses"),
+                ("Total Expenses", "Total Expenses"),
+                ("Net Income (loss)", "Net Burn / Income"),
+            ),
+        },
+        {
+            "title": "",
+            "units": "(Numbers in 000's)",
+            "scale": "whole",
+            "show_header": False,
+            "rows": (
+                ("Wallet Transactions", "Wallet Transactions"),
+                ("Telco Transactions", "Telco Transactions"),
+                ("Card Transactions", "Card Transactions"),
+                ("Disbursement Transactions", "Disbursement Transactions"),
+                ("Total No. of Transactions", "Total No. of Transactions"),
+            ),
+            "note": "*Note: Transaction-level data for the quarter has not yet been shared by the company and is expected to be provided in the next quarterly update.",
+        },
+    ),
+}
+
+
+def _forecast_col_for_actual(sheet: Worksheet, actual_col: int) -> int | None:
+    for row in range(1, min(sheet.max_row, 90) + 1):
+        current = _normalise(_cell_text(sheet.cell(row=row, column=actual_col).value))
+        next_value = _normalise(_cell_text(sheet.cell(row=row, column=actual_col + 1).value))
+        if current == "actual" and next_value == "forecast":
+            return actual_col + 1
+    return None
+
+
+def _format_table_metric_value(value: object, *, scale: str) -> str:
+    if not _is_metric_value(value):
+        return "-"
+    numeric = float(value)
+    if scale == "thousands":
+        numeric /= 1000
+    rounded = int(round(numeric))
+    if rounded < 0:
+        return f"({abs(rounded):,})"
+    return f"{rounded:,}"
+
+
+def _company_metric_section_config(company: str) -> tuple[dict[str, object], ...]:
+    configured = COMPANY_METRIC_SECTION_MAP.get(company)
+    if configured:
+        return configured
+    metric_map = COMPANY_METRIC_MAP.get(company)
+    if not metric_map:
+        return ()
+    return (
+        {
+            "title": "Key Financial & Operating Metrics",
+            "units": "(Numbers in 000's)",
+            "scale": "auto",
+            "rows": metric_map[:MAX_FIGMA_METRIC_ROWS],
+        },
+    )
+
+
+def _extract_metric_sections(
+    sheet: Worksheet,
+    formula_sheet: Worksheet,
+    months: tuple[tuple[int, int], ...],
+    company: str,
+) -> tuple[dict[str, object], ...]:
+    month_cols = find_month_columns(sheet, months)
+    if not month_cols:
+        return ()
+
+    first_month_col = min(month_cols.values())
+    label_rows = _metric_label_rows(sheet, first_month_col)
+    formula_cache: dict[tuple[int, int], object] = {}
+    sections: list[dict[str, object]] = []
+    for section_index, section in enumerate(_company_metric_section_config(company)):
+        scale = str(section.get("scale") or "auto")
+        rows: list[dict[str, object]] = []
+        for source_label, display_label in section.get("rows", ()):
+            row = label_rows.get(_normalise(str(source_label)))
+            if row is None:
+                continue
+            row_scale = "whole" if "transaction" in _normalise(str(display_label)) else scale
+            if row_scale == "auto":
+                row_scale = "thousands"
+            values: list[dict[str, object]] = []
+            for year, month in months:
+                actual_col = month_cols.get((year, month))
+                forecast_col = _forecast_col_for_actual(sheet, actual_col) if actual_col else None
+                actual = (
+                    _resolved_formula_cell_value(sheet, formula_sheet, row, actual_col, formula_cache, set())
+                    if actual_col
+                    else None
+                )
+                forecast = (
+                    _resolved_formula_cell_value(sheet, formula_sheet, row, forecast_col, formula_cache, set())
+                    if forecast_col
+                    else None
+                )
+                values.append(
+                    {
+                        "month": f"{month_abbr[month]} {str(year)[-2:]}",
+                        "actual": _format_table_metric_value(actual, scale=row_scale),
+                        "forecast": _format_table_metric_value(forecast, scale=row_scale),
+                    }
+                )
+            rows.append({"label": display_label, "values": values})
+        if rows:
+            sections.append(
+                {
+                    "index": section_index + 1,
+                    "title": str(section.get("title") or ""),
+                    "units": str(section.get("units") or ""),
+                    "show_header": bool(section.get("show_header", section_index == 0)),
+                    "rows": rows,
+                    "note": str(section.get("note") or ""),
+                }
+            )
+    return tuple(sections)
+
+
 def _top_qoq_changes(
     qoq_rows: list[dict[str, object]],
     company: str,
@@ -1011,6 +1146,7 @@ def parse_monthly_reporting_workbook(
                         description="",
                         key_updates=(),
                         metrics=(),
+                        metric_sections=(),
                         qoq_changes=(),
                         warnings=(f"Missing workbook sheet '{profile.report_sheet}'.",),
                     )
@@ -1022,6 +1158,7 @@ def parse_monthly_reporting_workbook(
             description = _extract_description(sheet, profile.display_name)
             key_updates = _extract_key_updates(sheet)
             metrics, metric_warnings = _extract_metrics(sheet, formula_sheet, metric_months, profile.display_name)
+            metric_sections = _extract_metric_sections(sheet, formula_sheet, metric_months, profile.display_name)
             company_warnings.extend(_text_warnings(description, key_updates))
             company_warnings.extend(metric_warnings)
             companies.append(
@@ -1032,6 +1169,7 @@ def parse_monthly_reporting_workbook(
                     description=description,
                     key_updates=key_updates,
                     metrics=metrics,
+                    metric_sections=metric_sections,
                     qoq_changes=_top_qoq_changes(qoq_rows, profile.display_name),
                     warnings=tuple(company_warnings),
                 )
@@ -1854,6 +1992,7 @@ def build_figma_data_pack(
                 "key_updates": _review_updates(row),
                 "notes": str(row.get("Notes", "")).strip(),
                 "metrics": _figma_metric_rows(company, months),
+                "metric_sections": company.metric_sections,
                 "qoq_changes": _figma_qoq_rows(company),
                 "warnings": [
                     warning["Warning"]

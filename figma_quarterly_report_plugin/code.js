@@ -491,6 +491,109 @@ async function setText(namedNodes, fieldName, value, warnings) {
   }
 }
 
+function removeNodesByPrefixes(root, prefixes) {
+  if (!root || !("findAll" in root)) return;
+  const nodes = root.findAll((node) => prefixes.some((prefix) => String(node.name || "").startsWith(prefix)));
+  for (const node of nodes) node.remove();
+}
+
+function metricSections(company) {
+  return Array.isArray(company.metric_sections) ? company.metric_sections.filter((section) => Array.isArray(section.rows) && section.rows.length) : [];
+}
+
+function hasForecastValues(section) {
+  return (section.rows || []).some((row) => (row.values || []).some((value) => value && value.forecast && value.forecast !== "-"));
+}
+
+async function drawValueText(frame, name, value, x, y, w, options = {}) {
+  await text(frame, name, value || "-", x, y, w, options.h || 18, options.size || 12, {
+    color: options.color || MID,
+    align: "RIGHT",
+    bold: Boolean(options.bold),
+  });
+}
+
+async function drawMetricSection(frame, section, y, sectionIndex, report) {
+  const rows = section.rows || [];
+  const reportMonths = report.months || [];
+  const maxMonths = Math.min(6, Math.max(reportMonths.length, rows[0] && rows[0].values ? rows[0].values.length : 0));
+  if (!rows.length || !maxMonths) return y;
+
+  const labelX = 50;
+  const labelW = 285;
+  const tableX = 344;
+  const tableRight = 1604;
+  const monthW = (tableRight - tableX) / maxMonths;
+  const useForecast = hasForecastValues(section);
+  const rowH = rows.length > 9 ? 21 : 24;
+  const valueSize = rows.length > 9 || maxMonths >= 6 ? 11 : 12;
+
+  if (section.title) {
+    await text(frame, `metrics.section_${sectionIndex}.heading`, section.title, 48, y, 520, 28, 21, { color: DARK });
+    y += 27;
+  }
+  if (section.units) {
+    await text(frame, `metrics.section_${sectionIndex}.units`, section.units, 50, y, 210, 18, 12, { color: MID });
+    y += 23;
+  }
+
+  if (section.show_header !== false) {
+    const headerY = y;
+    for (let m = 0; m < maxMonths; m += 1) {
+      const monthLabel = (rows[0].values && rows[0].values[m] && rows[0].values[m].month) || reportMonths[m] || "";
+      rect(frame, `metrics.section_${sectionIndex}.month_${m + 1}.bg`, tableX + m * monthW, headerY, monthW - 4, 42, GREEN);
+      await text(frame, `metrics.section_${sectionIndex}.month_${m + 1}.label`, monthLabel, tableX + m * monthW, headerY + 11, monthW - 4, 18, 14, { color: WHITE, align: "CENTER", bold: true });
+      if (useForecast) {
+        const subW = (monthW - 4) / 2;
+        await text(frame, `metrics.section_${sectionIndex}.month_${m + 1}.actual`, "Actual", tableX + m * monthW, headerY + 50, subW, 18, 12, { color: GREEN, align: "CENTER", bold: true });
+        await text(frame, `metrics.section_${sectionIndex}.month_${m + 1}.forecast`, "Forecast", tableX + m * monthW + subW, headerY + 50, subW, 18, 12, { color: { r: 0.58, g: 0.58, b: 0.58 }, align: "CENTER" });
+        line(frame, `metrics.section_${sectionIndex}.month_${m + 1}.divider`, tableX + m * monthW + subW, headerY + 42, 1, LINE);
+      }
+    }
+    y += useForecast ? 78 : 54;
+  } else {
+    y += 3;
+  }
+
+  for (let r = 0; r < rows.length; r += 1) {
+    const row = rows[r];
+    const yRow = y + r * rowH;
+    const isTotal = String(row.label || "").toLowerCase().includes("total") || String(row.label || "").toLowerCase().includes("net burn");
+    await text(frame, `metrics.section_${sectionIndex}.row_${r + 1}.label`, cleanMetricLabel(row.label), labelX, yRow, labelW, rowH, valueSize, { color: DARK, bold: isTotal });
+    const values = row.values || [];
+    for (let m = 0; m < maxMonths; m += 1) {
+      const value = values[m] || {};
+      if (useForecast) {
+        const subW = (monthW - 4) / 2;
+        await drawValueText(frame, `metrics.section_${sectionIndex}.row_${r + 1}.month_${m + 1}.actual`, value.actual, tableX + m * monthW + 10, yRow, subW - 18, { size: valueSize, bold: isTotal, color: DARK });
+        await drawValueText(frame, `metrics.section_${sectionIndex}.row_${r + 1}.month_${m + 1}.forecast`, value.forecast, tableX + m * monthW + subW + 10, yRow, subW - 18, { size: valueSize, bold: isTotal, color: { r: 0.62, g: 0.62, b: 0.62 } });
+      } else {
+        await drawValueText(frame, `metrics.section_${sectionIndex}.row_${r + 1}.month_${m + 1}`, value.actual || value.value, tableX + m * monthW + 14, yRow, monthW - 28, { size: valueSize, bold: isTotal, color: DARK });
+      }
+    }
+  }
+
+  y += rows.length * rowH + 18;
+  line(frame, `metrics.section_${sectionIndex}.bottom_rule`, 46, y, 1608, sectionIndex === 1 ? LINE : { r: 0.32, g: 0.32, b: 0.32 });
+  return y + 12;
+}
+
+async function drawCompanyMetricSections(frame, company, report) {
+  const sections = metricSections(company);
+  if (!sections.length) return false;
+  removeNodesByPrefixes(frame, ["metric_", "metrics.", "source.company", "notes.disclaimer"]);
+  let y = 439;
+  let note = "";
+  for (let i = 0; i < sections.length; i += 1) {
+    y = await drawMetricSection(frame, sections[i], y, i + 1, report);
+    if (sections[i].note) note = sections[i].note;
+  }
+  const sourceY = Math.min(984, Math.max(900, y + 6));
+  await text(frame, "source.company", "Source: Company Information", 48, sourceY, 400, 24, 14, { bold: true, color: { r: 0.56, g: 0.56, b: 0.56 } });
+  await text(frame, "notes.disclaimer", company.notes || note || "", 46, sourceY + 34, 1500, 30, 11, { bold: true, color: { r: 0.56, g: 0.56, b: 0.56 } });
+  return true;
+}
+
 async function fillCompanyFrame(frame, company, report, warnings) {
   const nodes = collectNodesByName(frame);
   await setText(nodes, "company.name", (company.name || "").toUpperCase(), warnings);
@@ -501,7 +604,6 @@ async function fillCompanyFrame(frame, company, report, warnings) {
     titleRule.resize(Math.max(80, 1654 - start), titleRule.height);
   }
   await setText(nodes, "company.description", company.description || "", warnings);
-  await setText(nodes, "notes.disclaimer", company.notes || "", warnings);
 
   const reportMonths = report.months || [];
   for (let index = 1; index <= 6; index += 1) {
@@ -522,6 +624,10 @@ async function fillCompanyFrame(frame, company, report, warnings) {
       const value = values[monthIndex - 1] || {};
       await setText(nodes, `metric_${metricIndex}.month_${monthIndex}`, value.value || "", warnings);
     }
+  }
+  const drewDynamicMetrics = await drawCompanyMetricSections(frame, company, report);
+  if (!drewDynamicMetrics) {
+    await setText(nodes, "notes.disclaimer", company.notes || "", warnings);
   }
 }
 
