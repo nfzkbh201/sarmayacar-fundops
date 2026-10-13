@@ -10,6 +10,20 @@ const net = require('node:net');
 const { webcrypto } = require('node:crypto');
 const TEST_UI_SESSION = 'a'.repeat(32);
 
+test('plugin manifest keeps the hosted origin and uses localhost for development', () => {
+  const manifest = JSON.parse(fs.readFileSync('figma_quarterly_report_plugin/manifest.json', 'utf8'));
+  assert.deepEqual(manifest.networkAccess.allowedDomains, [
+    'https://sarmayacar-figma-bridge.sarmayacar-figma-cloudflare-bridge.workers.dev',
+  ]);
+  // Figma rejects numeric loopback hosts in devAllowedDomains.
+  assert.deepEqual(manifest.networkAccess.devAllowedDomains, [
+    'http://localhost:8765', 'http://localhost:8766',
+  ]);
+  for (const entry of [manifest.main, manifest.ui]) {
+    assert.ok(fs.existsSync(path.join('figma_quarterly_report_plugin', entry)));
+  }
+});
+
 function runtime() {
   let nextId = 0;
   class Node {

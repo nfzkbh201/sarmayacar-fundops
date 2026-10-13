@@ -8,6 +8,6 @@
   "documentAccess": "dynamic-page",
   "networkAccess": {
     "allowedDomains": ["https://sarmayacar-figma-bridge.sarmayacar-figma-cloudflare-bridge.workers.dev"],
-    "devAllowedDomains": ["http://127.0.0.1:8765", "http://localhost:8765", "http://127.0.0.1:8766", "http://localhost:8766"]
+    "devAllowedDomains": ["http://localhost:8765", "http://localhost:8766"]
   }
 }

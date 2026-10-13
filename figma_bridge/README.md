@@ -22,6 +22,9 @@ publish any report automatically. That directory is excluded from Git.
 2. Open the report file and intended page in Figma Desktop. Run the updated local
    plugin from `figma_quarterly_report_plugin/manifest.json`.
 3. Enter the local service URL and pairing code in the plugin, then Connect.
+   In the plugin URL use `localhost` instead of `127.0.0.1`: Figma rejects numeric
+   loopback addresses in `devAllowedDomains`. Ports 8765 and 8766 are allowed;
+   add the selected localhost port to the manifest if the launcher uses another.
 4. Refresh destinations in Streamlit and click Send to Figma.
 5. Check that Streamlit reports completion. Send the same quarter again and
    confirm that its generated frame count does not increase.
@@ -66,7 +69,7 @@ for one destination. Pair each destination once; credentials are remembered
 locally in Figma client storage, not embedded in report layers or plugin source.
 
 The plugin manifest restricts `networkAccess.allowedDomains` to the deployed
-Cloudflare service origin, keeping loopback in `devAllowedDomains` only for
+Cloudflare service origin, keeping `localhost` in `devAllowedDomains` only for
 local testing. Update the manifest if the service moves to another origin.
 
 ## Updates and Recovery
