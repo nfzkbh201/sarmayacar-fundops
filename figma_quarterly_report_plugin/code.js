@@ -1,4 +1,12 @@
-figma.showUI(__html__, { width: 440, height: 520 });
+const sessionPage = figma.currentPage;
+const PLUGIN_BUILD = "2026.10.13.3";
+let uiSession = "";
+let activeReportRoot = null;
+let busy = false;
+
+function reportRoot() {
+  return activeReportRoot || sessionPage;
+}
 
 const PAGE_W = 1723;
 const PAGE_H = 1147;
@@ -14,8 +22,12 @@ const FIELD_LIMITS = {
   "notes.disclaimer": 240,
 };
 
+function postUI(message) {
+  figma.ui.postMessage({ ...message, uiSession, build: PLUGIN_BUILD });
+}
+
 function sendStatus(text) {
-  figma.ui.postMessage({ type: "status", text });
+  postUI({ type: "status", text });
 }
 
 function solid(color) {
@@ -34,13 +46,13 @@ function append(parent, node) {
 
 function rect(parent, name, x, y, w, h, fill, radius = 0) {
   const node = figma.createRectangle();
+  append(parent, node);
   node.name = name;
   node.x = x;
   node.y = y;
   node.resize(w, h);
   node.fills = solid(fill);
   node.cornerRadius = radius;
-  append(parent, node);
   return node;
 }
 
@@ -167,6 +179,7 @@ function isFinancialTotal(label) {
 
 async function text(parent, name, value, x, y, w, h, size, options = {}) {
   const node = figma.createText();
+  append(parent, node);
   node.name = name;
   node.x = x;
   node.y = y;
@@ -178,18 +191,17 @@ async function text(parent, name, value, x, y, w, h, size, options = {}) {
   node.textAlignHorizontal = options.align || "LEFT";
   node.textAlignVertical = options.valign || "TOP";
   node.characters = value || "";
-  append(parent, node);
   return node;
 }
 
 function createFrame(name, x, y) {
   const frame = figma.createFrame();
+  reportRoot().appendChild(frame);
   frame.name = name;
   frame.x = x;
   frame.y = y;
   frame.resize(PAGE_W, PAGE_H);
   frame.fills = solid(WHITE);
-  figma.currentPage.appendChild(frame);
   return frame;
 }
 
@@ -410,12 +422,12 @@ async function createFinancialExhibits(x, y, report = {}) {
 }
 
 function findFrameByName(name) {
-  return figma.currentPage.findOne((node) => node.name === name && node.type === "FRAME");
+  return reportRoot().findOne((node) => node.name === name && node.type === "FRAME");
 }
 
 function removeFramesByNames(names) {
   const wanted = new Set(names);
-  const frames = figma.currentPage.findAll((node) => node.type === "FRAME" && wanted.has(node.name));
+  const frames = reportRoot().findAll((node) => node.type === "FRAME" && wanted.has(node.name));
   for (const frame of frames) frame.remove();
 }
 
@@ -636,7 +648,7 @@ function bulletText(items) {
 }
 
 async function fillHighlights(data, warnings) {
-  const frame = figma.currentPage.findOne((node) => node.name === "03 Highlights");
+  const frame = reportRoot().findOne((node) => node.name === "03 Highlights");
   if (!frame) return null;
   const nodes = collectNodesByName(frame);
   const highlights = data.highlights || [];
@@ -741,7 +753,7 @@ async function ensureReportFrontMatter(report, warnings, portfolioSummary = {}) 
 }
 
 async function findOrCreateCompanyTemplate(report = {}) {
-  const existing = figma.currentPage.findOne((node) => node.name === "Company Page Template");
+  const existing = reportRoot().findOne((node) => node.name === "Company Page Template");
   if (existing && ["FRAME", "COMPONENT", "INSTANCE"].includes(existing.type)) {
     await updateReportPeriodText(existing, report, []);
     existing.visible = false;
@@ -788,37 +800,149 @@ async function importCompanies(data) {
   created.push(...await createOperatorAngelPages(operatorAngels, operatorStartX, operatorStartY, report));
   created.push(...await createFinancialExhibitPages(data.financial_exhibits, operatorStartX, operatorStartY + PAGE_H + 90, report));
 
-  figma.currentPage.selection = created;
-  figma.viewport.scrollAndZoomIntoView(created);
-  return { createdCount: created.length, warnings };
+  template.remove();
+  return { createdCount: created.length, warnings, frames: created };
+}
+
+async function updateReport(data, jobId = "") {
+  if (figma.currentPage.id !== sessionPage.id) throw new Error("Return to the paired Figma page before updating.");
+  const quarter = data && data.report && data.report.quarter;
+  if (!/^Q[1-4] 20\d{2}$/.test(quarter || "")) throw new Error("The report needs a valid quarter and year.");
+  for (const node of sessionPage.children) {
+    if (node.getPluginData("sarmayacar_staging") === quarter) node.remove();
+  }
+  const owned = sessionPage.children.filter((node) => node.getPluginData("sarmayacar_report") === quarter);
+  if (jobId && owned.length && owned.every((node) => node.getPluginData("sarmayacar_job") === jobId)
+      && owned.length === Number(owned[0].getPluginData("sarmayacar_page_count"))) {
+    const warnings = JSON.parse(owned[0].getPluginData("sarmayacar_warnings") || "[]");
+    return { createdCount: owned.length, warnings };
+  }
+  const stage = figma.createFrame();
+  stage.name = "Preparing quarterly report";
+  stage.setPluginData("sarmayacar_staging", quarter);
+  stage.visible = false;
+  stage.clipsContent = false;
+  stage.fills = [];
+  sessionPage.appendChild(stage);
+  const offsetX = owned.length ? Math.min(...owned.map((node) => node.x)) : 0;
+  const other = sessionPage.children.filter((node) => node.id !== stage.id && !owned.includes(node));
+  const offsetY = owned.length ? Math.min(...owned.map((node) => node.y))
+    : other.reduce((bottom, node) => Math.max(bottom, node.y + node.height + 90), 0);
+  let newFrames = [];
+  let committed = false;
+  try {
+    activeReportRoot = stage;
+    const result = await importCompanies(data);
+    newFrames = result.frames;
+    if (figma.currentPage.id !== sessionPage.id) throw new Error("Page changed during import. The previous report was kept.");
+    for (let index = 0; index < newFrames.length; index += 1) {
+      const frame = newFrames[index];
+      frame.setPluginData("sarmayacar_report", quarter);
+      frame.setPluginData("sarmayacar_job", jobId);
+      frame.setPluginData("sarmayacar_page_count", String(newFrames.length));
+      frame.setPluginData("sarmayacar_warnings", JSON.stringify(result.warnings.slice(0, 50)));
+      sessionPage.appendChild(frame);
+      frame.x = offsetX + (index % 3) * (PAGE_W + 90);
+      frame.y = offsetY + Math.floor(index / 3) * (PAGE_H + 90);
+    }
+    committed = true;
+    for (const old of owned) old.remove();
+    sessionPage.selection = newFrames;
+    try { figma.viewport.scrollAndZoomIntoView(newFrames); } catch (_) { /* The report is already committed. */ }
+    return { createdCount: result.createdCount, warnings: result.warnings };
+  } catch (error) {
+    if (!committed) for (const frame of newFrames) if (!frame.removed) frame.remove();
+    throw error;
+  } finally {
+    activeReportRoot = null;
+    if (!stage.removed) stage.remove();
+  }
+}
+
+async function connectionContext() {
+  const connectionId = sessionPage.getPluginData("sarmayacar_connection");
+  const saved = connectionId ? await figma.clientStorage.getAsync(`bridge.${connectionId}`) : null;
+  postUI({ type: "context", context: {
+    page_id: sessionPage.id, page_name: sessionPage.name, file_name: figma.root.name,
+    target_id: sessionPage.getPluginData("sarmayacar_target"),
+  }, saved });
 }
 
 figma.ui.onmessage = async (message) => {
+  if (!message || typeof message !== "object") return;
+  if (message.type === "ready" && !uiSession && /^[a-f0-9]{32}$/.test(message.uiSession || "")) {
+    uiSession = message.uiSession;
+  }
+  if (!uiSession || message.uiSession !== uiSession) return;
+  let acquired = false;
   if (message.type === "cancel") {
     figma.closePlugin();
     return;
   }
 
   try {
+    if (message.type === "ready") {
+      console.info(`[Sarmayacar ${PLUGIN_BUILD}] UI handshake received.`);
+      await connectionContext();
+      return;
+    }
+    if (message.type === "save-connection") {
+      if (figma.currentPage.id !== sessionPage.id) throw new Error("Return to the page where you opened this plugin.");
+      const id = String(message.connection.code || "").split(".")[0];
+      if (!id || !message.connection.target_id) throw new Error("Invalid connection.");
+      await figma.clientStorage.setAsync(`bridge.${id}`, message.connection);
+      sessionPage.setPluginData("sarmayacar_connection", id);
+      sessionPage.setPluginData("sarmayacar_target", message.connection.target_id);
+      postUI({ type: "connection-saved" });
+      return;
+    }
+    if (message.type === "forget-connection") {
+      const id = sessionPage.getPluginData("sarmayacar_connection");
+      if (id) await figma.clientStorage.deleteAsync(`bridge.${id}`);
+      sessionPage.setPluginData("sarmayacar_connection", "");
+      postUI({ type: "connection-forgotten" });
+      return;
+    }
+    if (busy) throw new Error("A report is already importing. Please wait.");
+    if (figma.currentPage.id !== sessionPage.id) throw new Error("Return to the page where you opened this plugin.");
+    busy = true;
+    acquired = true;
     if (message.type === "create-template") {
       sendStatus("Creating Sarmayacar XD-style template frames...");
       await createTemplateFrames();
       sendStatus("Created template frames: cover, contents, highlights, portfolio table, company page, operator angel page, and financial exhibits.");
       figma.notify("Created Sarmayacar quarterly template frames");
+      postUI({ type: "template-result" });
       return;
     }
 
     if (message.type !== "import") return;
     sendStatus("Importing company pages...");
-    const result = await importCompanies(message.data);
+    const result = await updateReport(message.data, message.jobId || "");
     const warningText = result.warnings.length
       ? `\n\nWarnings:\n- ${result.warnings.slice(0, 50).join("\n- ")}`
       : "";
-    sendStatus(`Created ${result.createdCount} company pages.${warningText}`);
-    figma.notify(`Created ${result.createdCount} company pages`);
+    sendStatus(`Updated ${result.createdCount} report pages.${warningText}`);
+    postUI({ type: "import-result", jobId: message.jobId || "", ok: true, ...result });
+    figma.notify(`Updated ${result.createdCount} report pages`);
   } catch (error) {
     const messageText = error && error.message ? error.message : String(error);
     sendStatus(messageText);
+    if (["ready", "save-connection", "forget-connection"].includes(message.type)) {
+      postUI({ type: "connection-error", error: messageText });
+    } else {
+      postUI({ type: "import-result", jobId: message.jobId || "", ok: false, error: messageText });
+    }
     figma.notify(messageText, { error: true });
+  } finally {
+    if (acquired) busy = false;
   }
 };
+
+figma.on("currentpagechange", () => {
+  postUI({ type: "page-active", active: figma.currentPage.id === sessionPage.id });
+});
+
+figma.showUI(__html__, { width: 460, height: 660 });
+console.info(`[Sarmayacar ${PLUGIN_BUILD}] Plugin opened.`);
+postUI({ type: "plugin-boot" });

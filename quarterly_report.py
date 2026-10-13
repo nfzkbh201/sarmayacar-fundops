@@ -21,6 +21,7 @@ import streamlit as st
 
 from monthly_reporting_automation import PROFILES, find_month_columns, workbook_sheet_name
 from monthly_reporting_page import QOQ_METHOD_MANUAL, _qoq_rows_for_workbook
+from figma_handoff import render_figma_connection
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -2441,7 +2442,7 @@ def render_quarterly_report_page() -> None:
 
     with st.container(border=True):
         st.subheader("Figma handoff")
-        st.caption("Download this JSON and import it with the private Figma plugin inside the quarterly report template.")
+        render_figma_connection(figma_data_pack)
         handoff_cols = st.columns(3)
         handoff_cols[0].metric("Portfolio companies", included_company_count)
         handoff_cols[1].metric("Operator angels", included_operator_count)

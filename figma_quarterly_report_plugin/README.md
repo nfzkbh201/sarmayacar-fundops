@@ -12,19 +12,21 @@ frames and fills them from reviewed workbook data.
 2. Go to `Plugins > Development > Import plugin from manifest...`.
 3. Select `figma_quarterly_report_plugin/manifest.json`.
 4. Run `Sarmayacar Quarterly Report Importer`.
-5. Click `Create XD-style template frames`.
-6. In Streamlit, download the Figma data pack from the `Quarterly Report` tab.
-7. Paste the JSON data pack into the plugin and click `Import company pages`.
+5. Pair the plugin with the private service using the URL and pairing code from
+   Streamlit's `Figma handoff` panel.
+6. Leave `Receive reports from Streamlit` checked. In Streamlit, click `Send to Figma`.
+7. The plugin updates the report and sends completion status back to Streamlit.
+
+See [connection setup](../figma_bridge/README.md) for local testing and hosting.
+For file import, expand `File import`, choose the JSON or paste it, and click
+`Import report`. Creating template frames first is no longer necessary.
 
 ## What The Plugin Creates
 
 - Cover
 - Contents
 - Highlights
-- Portfolio table placeholder
-- Company page template
-- Operator angel company template
-- Financial exhibits placeholder
+- Three portfolio summary pages when all portfolio rows are supplied
 - One filled company page per included company
 - Filled highlights text when a `Quarterly Commentary` sheet is present
 - Filled operator angel pages from the commentary sheet
@@ -49,7 +51,12 @@ Metric table placeholders:
 - `metric_1.month_1` through `metric_1.month_6`
 - repeat through `metric_10.*`
 
-The current Streamlit data pack fills available metrics and leaves extra rows
-blank. Portfolio tables are still placeholders for a later phase; highlights,
-operator angel pages, company pages, and financial exhibit pages are exported
-as editable Figma frames.
+New packs can supply multiple metric sections with Actual/Forecast columns.
+All report sections are editable Figma frames. Portfolio fields and company
+metrics still require the separate mapping validation work.
+
+Imports now tag their generated frames. Reimporting the same quarter replaces
+those frames, including manual edits inside them; older untagged imports and
+other quarters remain untouched. The plugin builds the replacement first and
+keeps the existing report if rendering fails. No extra Figma file or Page is
+created by the connection.

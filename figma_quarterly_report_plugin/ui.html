@@ -1,102 +1,292 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <style>
-      body {
-        margin: 0;
-        padding: 16px;
-        font: 12px Inter, Arial, sans-serif;
-        color: #1f2937;
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; font: 12px Inter, Arial, sans-serif; color: #263238; }
+    h1 { font-size: 17px; margin: 0 0 18px; }
+    label { display: block; margin: 12px 0 6px; }
+    input:not([type=checkbox]), textarea { width: 100%; border: 1px solid #c6cdd1; border-radius: 4px; padding: 9px; font: inherit; }
+    textarea { height: 110px; resize: vertical; }
+    button { border: 0; border-radius: 4px; min-height: 34px; padding: 8px 14px; cursor: pointer; background: #008c78; color: white; font: inherit; font-weight: 600; }
+    button.secondary { background: #edf1f3; color: #263238; }
+    button:disabled { opacity: .5; cursor: default; }
+    .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    #destination { color: #59656a; overflow-wrap: anywhere; margin-bottom: 14px; }
+    #connection-status { color: #00836e; margin: 14px 0; }
+    #status { margin: 14px 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow: auto; line-height: 1.5; }
+    details { margin-top: 18px; border-top: 1px solid #dbe1e4; padding-top: 14px; }
+    summary { cursor: pointer; font-weight: 600; }
+    .note { color: #59656a; font-size: 11px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>Sarmayacar Quarterly Report</h1>
+  <div id="build" class="note">Build 2026.10.13.3</div>
+  <div id="destination"></div>
+  <div id="setup">
+    <label for="service">Service URL</label>
+    <input id="service" type="url" placeholder="https://your-private-service.example">
+    <label for="code">Pairing code</label>
+    <input id="code" type="password" autocomplete="off">
+    <div class="actions"><button id="connect" disabled>Connect</button></div>
+  </div>
+  <div id="connected" hidden>
+    <label><input id="receive" type="checkbox" checked> Receive reports from Streamlit</label>
+    <div class="actions"><button id="disconnect" class="secondary">Disconnect</button></div>
+  </div>
+  <div id="connection-status" role="status">Loading Figma page...</div>
+  <p class="note">Updates replace generated pages for the same quarter, including edits made to those pages. Other quarters and unlinked pages are kept.</p>
+  <div id="status" role="status" aria-live="polite"></div>
+  <details>
+    <summary>File import</summary>
+    <label for="file">Report data pack</label>
+    <input id="file" type="file" accept=".json,application/json">
+    <label for="payload">Or paste JSON</label>
+    <textarea id="payload"></textarea>
+    <div class="actions">
+      <button id="import">Import report</button>
+      <button id="create-template" class="secondary">Create template frames</button>
+    </div>
+  </details>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const UI_BUILD = "2026.10.13.3";
+    const PLUGIN_ID = "sarmayacar-quarterly-report-importer";
+    const send = (message) => parent.postMessage({ pluginId: PLUGIN_ID, pluginMessage: { ...message, uiSession } }, "*");
+    let uiSession, startupTimer, startupRetryTimer, startupAttempts = 0, mainBuild = "";
+    let runner, context, connection, timer, connectionSaveTimer, inFlight = false, pageActive = true;
+    let importResolve, pendingResult, retryDelay = 5000;
+
+    function randomId() {
+      // randomUUID is unavailable in some embedded plugin contexts.
+      if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
+        throw new Error("Secure random IDs are unavailable. Close the plugin and update Figma before retrying.");
       }
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
+    }
 
-      h1 {
-        margin: 0 0 8px;
-        font-size: 16px;
-      }
+    function lock(value) {
+      inFlight = value;
+      for (const id of ["connect", "disconnect", "import", "create-template", "receive"]) $(id).disabled = value || !context;
+    }
 
-      p {
-        margin: 0 0 12px;
-        color: #5b6770;
-        line-height: 1.45;
-      }
+    function serviceUrl(value) {
+      const url = new URL(value.trim());
+      const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+      if (url.protocol !== "https:" && !(local && url.protocol === "http:")) throw new Error("Use HTTPS, or HTTP on localhost for testing.");
+      if (url.username || url.password || url.search || url.hash) throw new Error("Enter only the service URL.");
+      return url.href.replace(/\/$/, "");
+    }
 
-      textarea {
-        box-sizing: border-box;
-        width: 100%;
-        height: 260px;
-        padding: 10px;
-        border: 1px solid #d0d7de;
-        border-radius: 6px;
-        font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
-        resize: vertical;
-      }
-
-      button {
-        width: 100%;
-        min-height: 36px;
-        margin-top: 12px;
-        border: 0;
-        border-radius: 6px;
-        background: #123d40;
-        color: white;
-        font-weight: 700;
-        cursor: pointer;
-      }
-
-      button.secondary {
-        background: #f3f5f7;
-        color: #123d40;
-      }
-
-      #status {
-        margin-top: 12px;
-        white-space: pre-wrap;
-        color: #5b6770;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Sarmayacar Quarterly Importer</h1>
-    <p>Create the Sarmayacar report frames first, then paste the Figma data pack from Streamlit to fill company pages.</p>
-    <textarea id="payload" placeholder="Paste Sarmayacar Quarterly Report JSON here"></textarea>
-    <button id="create-template" class="secondary">Create XD-style template frames</button>
-    <button id="import">Import company pages</button>
-    <button id="cancel" class="secondary">Cancel</button>
-    <div id="status"></div>
-
-    <script>
-      const payload = document.getElementById("payload");
-      const status = document.getElementById("status");
-
-      document.getElementById("create-template").onclick = () => {
-        parent.postMessage({ pluginMessage: { type: "create-template" } }, "*");
-        status.textContent = "Creating template frames...";
-      };
-
-      document.getElementById("import").onclick = () => {
-        let data;
-        try {
-          data = JSON.parse(payload.value);
-        } catch (error) {
-          status.textContent = "Invalid JSON: " + error.message;
-          return;
+    async function api(path, data, method = data ? "POST" : "GET") {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(connection.url + path, {
+          method, headers: { "Authorization": "Bearer " + connection.code, "Content-Type": "application/json" },
+          body: data ? JSON.stringify(data) : undefined, signal: controller.signal,
+          redirect: "error", cache: "no-store", credentials: "omit",
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          const error = new Error(result.detail || "Connection request failed.");
+          error.status = response.status;
+          throw error;
         }
-        parent.postMessage({ pluginMessage: { type: "import", data } }, "*");
-        status.textContent = "Importing...";
-      };
+        return result;
+      } finally { clearTimeout(timeout); }
+    }
 
-      document.getElementById("cancel").onclick = () => {
-        parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
-      };
+    function schedule() {
+      clearTimeout(timer);
+      if (connection) timer = setTimeout(poll, retryDelay);
+    }
 
-      window.onmessage = (event) => {
-        const message = event.data.pluginMessage;
-        if (!message) return;
-        if (message.type === "status") {
-          status.textContent = message.text;
+    async function acknowledge() {
+      try {
+        await api("/v1/plugin/jobs/" + pendingResult.id + "/result", pendingResult.body);
+        pendingResult = null;
+      } catch (error) {
+        if (error.status === 409) pendingResult = null;
+        throw error;
+      }
+    }
+
+    async function poll() {
+      if (!connection || inFlight) { schedule(); return; }
+      if (!pageActive) { $("connection-status").textContent = "Paused: return to the paired page."; schedule(); return; }
+      if (!$("receive").checked) { $("connection-status").textContent = "Receiving paused"; schedule(); return; }
+      lock(true);
+      let heartbeat;
+      try {
+        if (pendingResult) await acknowledge();
+        const response = await api("/v1/plugin/jobs");
+        retryDelay = 5000;
+        $("connection-status").textContent = "Connected. Waiting for Streamlit.";
+        if (!response.job) return;
+        const job = await api("/v1/plugin/jobs/" + response.job.id + "/claim", { runner });
+        $("connection-status").textContent = "Receiving " + job.payload.report.quarter;
+        heartbeat = setInterval(() => {
+          api("/v1/plugin/jobs/" + job.id + "/claim", { runner }).catch(() => {});
+        }, 30000);
+        const outcome = await new Promise((resolve) => {
+          importResolve = { id: job.id, resolve };
+          send({ type: "import", jobId: job.id, data: job.payload });
+        });
+        pendingResult = { id: job.id, body: {
+          runner, status: outcome.ok ? "succeeded" : "failed",
+          page_count: outcome.createdCount || 0, warnings: outcome.warnings || [],
+          message: outcome.ok ? "Report updated." : outcome.error,
+        } };
+        await acknowledge();
+        $("connection-status").textContent = outcome.ok ? "Updated. Completion sent to Streamlit." : "Import failed. Status sent to Streamlit.";
+      } catch (error) {
+        retryDelay = Math.min(30000, retryDelay * 2);
+        $("connection-status").textContent = (pendingResult ? "Report processed; confirmation pending. " : "Connection retry pending. ") + error.message;
+      } finally {
+        clearInterval(heartbeat);
+        lock(false);
+        schedule();
+      }
+    }
+
+    async function connect(saved) {
+      if (inFlight) return;
+      lock(true);
+      $("connection-status").textContent = "Connecting to the report service...";
+      try {
+        if (!context) {
+          throw new Error("Figma page details have not loaded. Check the startup status before connecting.");
         }
-      };
-    </script>
-  </body>
+        runner = runner || randomId();
+        connection = saved || { url: serviceUrl($("service").value), code: $("code").value.trim(),
+          target_id: context.target_id || randomId() };
+        connection.url = serviceUrl(connection.url);
+        if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{40,}$/.test(connection.code)) throw new Error("Enter the pairing code from Streamlit.");
+        await api("/v1/plugin/connect", { ...context, target_id: connection.target_id });
+        $("connection-status").textContent = "Service reached. Saving the Figma connection...";
+        connectionSaveTimer = setTimeout(() => {
+          connection = null;
+          lock(false);
+          $("connection-status").textContent = "Figma did not confirm the connection. Close and reopen the plugin, then retry.";
+        }, 10000);
+        send({ type: "save-connection", connection });
+      } catch (error) {
+        clearTimeout(connectionSaveTimer);
+        connection = null;
+        $("connection-status").textContent = "Connection failed: " + error.message;
+        lock(false);
+      }
+    }
+
+    $("connect").onclick = () => connect();
+    $("disconnect").onclick = () => {
+      clearTimeout(timer);
+      connection = null;
+      pendingResult = null;
+      send({ type: "forget-connection" });
+    };
+    $("file").onchange = async () => {
+      const file = $("file").files[0];
+      if (file && file.size <= 5 * 1024 * 1024) $("payload").value = await file.text();
+      else $("status").textContent = "Select a JSON file smaller than 5 MB.";
+    };
+    $("import").onclick = () => {
+      try {
+        const data = JSON.parse($("payload").value);
+        lock(true);
+        send({ type: "import", data });
+      } catch (error) { $("status").textContent = "Invalid JSON: " + error.message; }
+    };
+    $("create-template").onclick = () => { lock(true); send({ type: "create-template" }); };
+
+    window.onmessage = (event) => {
+      const message = event.data && event.data.pluginMessage;
+      if (!message || typeof message !== "object") return;
+      if (event.data.pluginId && event.data.pluginId !== PLUGIN_ID) return;
+      if (message.type === "plugin-boot") {
+        mainBuild = String(message.build || "unknown");
+        $("build").textContent = "Build " + UI_BUILD + " / Figma code " + mainBuild;
+        return;
+      }
+      // Figma can relay from a different Window. Match the private request nonce instead.
+      if (!uiSession || message.uiSession !== uiSession) return;
+      if (message.type === "context") {
+        if (context) return;
+        if (!message.context || !message.context.page_id || typeof message.context.file_name !== "string"
+            || typeof message.context.page_name !== "string") return;
+        clearTimeout(startupTimer);
+        clearTimeout(startupRetryTimer);
+        context = message.context;
+        mainBuild = String(message.build || "unknown");
+        $("build").textContent = "Build " + UI_BUILD + " / Figma code " + mainBuild;
+        $("destination").textContent = context.file_name + " / " + context.page_name;
+        $("connection-status").textContent = "Not connected";
+        console.info("[Sarmayacar " + UI_BUILD + "] Figma page details received.");
+        lock(false);
+        if (message.saved) {
+          $("service").value = message.saved.url;
+          $("code").value = message.saved.code;
+          connect(message.saved);
+        }
+      } else if (message.type === "connection-saved") {
+        clearTimeout(connectionSaveTimer);
+        if (!connection) return;
+        $("setup").hidden = true;
+        $("connected").hidden = false;
+        $("code").value = "";
+        lock(false);
+        poll();
+      } else if (message.type === "connection-forgotten") {
+        $("setup").hidden = false;
+        $("connected").hidden = true;
+        $("connection-status").textContent = "Disconnected";
+      } else if (message.type === "connection-error") {
+        clearTimeout(startupTimer);
+        clearTimeout(startupRetryTimer);
+        clearTimeout(connectionSaveTimer);
+        connection = null;
+        lock(false);
+        $("connection-status").textContent = "Figma connection failed: " + message.error;
+      } else if (message.type === "page-active") {
+        pageActive = message.active;
+      } else if (message.type === "status") {
+        $("status").textContent = message.text;
+      } else if (message.type === "template-result") {
+        lock(false);
+      } else if (message.type === "import-result") {
+        if (importResolve && importResolve.id === message.jobId) {
+          importResolve.resolve(message);
+          importResolve = null;
+        } else {
+          lock(false);
+        }
+      }
+    };
+    function requestContext() {
+      if (context) return;
+      startupAttempts += 1;
+      send({ type: "ready" });
+      if (startupAttempts < 4) startupRetryTimer = setTimeout(requestContext, 1500);
+    }
+
+    lock(false);
+    try {
+      uiSession = randomId();
+      console.info("[Sarmayacar " + UI_BUILD + "] UI started; requesting Figma page details.");
+      startupTimer = setTimeout(() => {
+        if (!context) $("connection-status").textContent = "Startup failed: " +
+          (mainBuild ? "Figma code " + mainBuild + " opened but did not complete the handshake. "
+            : "No reply from the Figma code. ") +
+          "Please share the Console lines containing Sarmayacar. No connection request was sent.";
+      }, 8000);
+      requestContext();
+    } catch (error) {
+      $("connection-status").textContent = "Startup failed: " + error.message;
+    }
+  </script>
+</body>
 </html>
