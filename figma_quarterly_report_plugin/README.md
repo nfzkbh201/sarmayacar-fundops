@@ -82,3 +82,27 @@ review instead of being silently omitted or moving the approved page breaks.
 This layout does not calculate or approve numbers. Supplied descriptions, dates,
 ownership, board seats, status labels, financial strings and totals pass through
 unchanged. Numerical mapping and reconciliation remain a separate review.
+
+## Portfolio Number Sources
+
+The Streamlit data pack maps the selected quarter's financial exhibits, keeping
+all 26 summary rows independently of the exhibit display row limit:
+
+- Cost: `SV Total Investment` in the investment schedule, in USD.
+- Ownership: `SV Total Ownership` in that schedule, displayed to one decimal percent.
+- Carrying value: the matching quarter's Balance Sheet company row, converted from
+  USD thousands to whole USD before display rounding.
+- Unrealized gain/loss: current carrying value less cost. Old valuation and
+  unrealized-gain schedule columns are not used.
+- Realized gain/loss: an explicit company `Realized Gain/Loss ($)` column when supplied.
+  Without it, display `-`, not an assumed zero or a fund-level income statement figure.
+
+Descriptions, first investment dates and board seats retain the approved report
+details. Investment-date conflicts are flagged. Workbook ownership replaces the
+approved percentage; blank, invalid or duplicate inputs show `-` with a warning.
+Each mapped value carries its source cell in the data pack. Missing amounts
+withhold the affected subtotal/total instead of producing a partial sum.
+
+The portfolio review checks grand cost and carrying value against the selected
+quarter's Financial Summary control totals. A different quarter's unversioned
+cost/ownership schedule cannot be paired with a historical balance column.

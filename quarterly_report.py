@@ -10,6 +10,7 @@ import operator
 from calendar import month_abbr, month_name
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from typing import Iterable
 
@@ -1623,7 +1624,7 @@ def _figma_qoq_rows(company: CompanyReportData) -> list[dict[str, object]]:
     return rows
 
 
-MONTH_YEAR_RE = re.compile(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[ -]?\d{2,4}$", re.IGNORECASE)
+MONTH_YEAR_RE = re.compile(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[ -]?(\d{2}|\d{4})$", re.IGNORECASE)
 
 
 def _format_exhibit_header(value: object) -> str:
@@ -1632,8 +1633,9 @@ def _format_exhibit_header(value: object) -> str:
     if value is None:
         return ""
     text = str(value).strip()
-    if MONTH_YEAR_RE.match(text):
-        month_part, year_part = re.split(r"[ -]", text, maxsplit=1)
+    match = MONTH_YEAR_RE.fullmatch(text)
+    if match:
+        month_part, year_part = match.groups()
         return f"{month_part[:3].title()}-{year_part[-2:]}"
     return ""
 
@@ -1833,26 +1835,146 @@ def parse_financial_exhibits_workbook(
             "source_sheet": sheet_name,
             "periods": periods,
             "sections": sections,
+            "portfolio_source": _read_portfolio_source(sheet, expected_period),
         }, warnings
     finally:
         workbook.close()
 
 
-def _money_to_number(value: object) -> int | None:
-    text = str(value or "").strip()
-    if not text or text == "-":
+def _money_to_number(value: object, multiplier: int = 1) -> int | None:
+    if value is None or isinstance(value, (bool, date, datetime)):
         return None
-    negative = text.startswith("(") and text.endswith(")")
-    cleaned = re.sub(r"[^0-9.\-]", "", text)
-    if not cleaned or cleaned == "-":
-        return None
+    text = str(value).strip().replace("$", "").replace(",", "")
+    if text.startswith("(") and text.endswith(")"):
+        text = "-" + text[1:-1]
     try:
-        amount = float(cleaned)
-    except ValueError:
+        amount = Decimal(text) * multiplier
+        if not amount.is_finite():
+            return None
+        return int(amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    except (InvalidOperation, ValueError):
         return None
-    if negative:
-        amount = -amount
-    return int(round(amount))
+
+
+def _portfolio_key(value: object) -> str:
+    key = re.sub(r"[^a-z0-9]", "", str(value or "").lower())
+    aliases = {
+        "abhi": "abhifinance", "procheck": "procheck1", "buyzilla": "buyzilla2",
+        "jivetechnologies": "jiyetech", "jiyetechnologies": "jiyetech",
+        "llmbots": "truckistan", "raptrgames": "raptr", "taraki": "bolandi",
+        "savvytechnologies": "savvy", "bolanditechnologies": "bolandi",
+    }
+    return aliases.get(key, key)
+
+
+def _format_portfolio_ownership(value: object) -> str | None:
+    if value is None or isinstance(value, (bool, date, datetime)):
+        return None
+    text = str(value).strip()
+    try:
+        fraction = Decimal(text[:-1]) / 100 if text.endswith("%") else Decimal(text)
+        if not fraction.is_finite() or not Decimal(0) <= fraction <= Decimal(1):
+            return None
+        percent = (fraction * 100).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+        return f"{percent:.1f}%"
+    except InvalidOperation:
+        return None
+
+
+def _read_portfolio_source(sheet: Worksheet, period: str) -> dict[str, object]:
+    """Read full-precision portfolio inputs independently of exhibit display rounding/caps."""
+    result: dict[str, object] = {"period": period, "rows": {}, "controls": {}, "warnings": []}
+    warnings = result["warnings"]
+    balance = _find_financial_heading(sheet, "Balance Sheet")
+    income = _find_financial_heading(sheet, "Income Statement")
+    summary = _find_financial_heading(sheet, "Financial Summary")
+    if not balance or not income or not summary:
+        warnings.append("Portfolio source requires Balance Sheet, Income Statement and Financial Summary headings.")
+        return result
+    date_cols = _date_columns_in_range(sheet, balance[0] + 4, balance[1], summary[1] - 1)
+    matches = [col for col, label in date_cols if label == period]
+    if len(matches) != 1:
+        warnings.append(f"No unique {period} balance column; portfolio amounts are unavailable.")
+        return result
+    # Cost and ownership have no historical columns: use only the sheet's current period.
+    latest_period = max((label for _, label in date_cols), key=lambda label: datetime.strptime(label, "%b-%y"))
+    if latest_period != period:
+        warnings.append(f"{sheet.title} ends in {latest_period}, not {period}; portfolio amounts and ownership withheld.")
+        return result
+    value_col = matches[0]
+    known = {_portfolio_key(row["source_label"]) for row in PORTFOLIO_SUMMARY_ROWS}
+    rows = result["rows"]
+    for row in range(balance[0] + 5, income[0]):
+        key = _portfolio_key(_financial_label(sheet, row, range(balance[1], balance[1] + 3)))
+        if key not in known:
+            continue
+        cell = sheet.cell(row, value_col)
+        if key in rows:
+            rows[key]["carrying_value"] = None
+            warnings.append(f"Duplicate balance row for {key}; carrying value withheld.")
+        else:
+            rows[key] = {
+                "carrying_value": _money_to_number(cell.value, 1000),
+                "sources": {"carrying_value": f"{sheet.title}!{cell.coordinate} (USD thousands)"},
+            }
+
+    # This investment schedule contains cost in dollars, not the balance sheet's thousands.
+    cost_header = _find_financial_heading(sheet, "SV Total Investment")
+    if cost_header:
+        header_row, cost_col = cost_header
+        headers = {_normalise(_cell_text(c.value)): c.column for c in sheet[header_row] if c.value}
+        segment_col = headers.get("segment")
+        seen = set()
+        if segment_col:
+            for row in range(header_row + 1, sheet.max_row + 1):
+                if _normalise(_cell_text(sheet.cell(row, segment_col - 1).value)) == "total":
+                    break
+                key = _portfolio_key(sheet.cell(row, segment_col - 1).value)
+                if key not in known:
+                    continue
+                entry = rows.setdefault(key, {"sources": {}})
+                if key in seen:
+                    for field in ("cost", "ownership", "first_cash_injection", "realized_gain_loss"):
+                        entry[field] = None
+                    warnings.append(f"Duplicate investment row for {key}; cost, ownership and realized gains withheld.")
+                    continue
+                seen.add(key)
+                cell = sheet.cell(row, cost_col)
+                entry["cost"] = _money_to_number(cell.value)
+                entry["sources"]["cost"] = f"{sheet.title}!{cell.coordinate} (USD)"
+                for field, header in (("first_cash_injection", "date"), ("ownership", "sv total ownership")):
+                    col = headers.get(header)
+                    if col:
+                        cell = sheet.cell(row, col)
+                        if field == "first_cash_injection":
+                            value = _format_exhibit_header(cell.value)
+                        else:
+                            value = _format_portfolio_ownership(cell.value)
+                            if value is None:
+                                warnings.append(f"Invalid or missing ownership at {sheet.title}!{cell.coordinate} "
+                                                f"({cell.value if cell.value is not None else 'blank'}); shown as '-'.")
+                        entry[field] = value
+                        entry["sources"][field] = f"{sheet.title}!{cell.coordinate}"
+                realized_col = headers.get("realized gain/loss ($)")
+                if realized_col:
+                    cell = sheet.cell(row, realized_col)
+                    entry["realized_gain_loss"] = _money_to_number(cell.value)
+                    entry["sources"]["realized_gain_loss"] = f"{sheet.title}!{cell.coordinate} (USD)"
+        else:
+            warnings.append("Investment schedule has no Segment header; cost and ownership are unavailable.")
+    else:
+        warnings.append("No SV Total Investment header found; cost and ownership are unavailable.")
+
+    summary_dates = _date_columns_in_range(sheet, summary[0] + 4, summary[1] + 1, sheet.max_column)
+    summary_cols = [col for col, label in summary_dates if label == period]
+    if len(summary_cols) == 1:
+        control_labels = {"total invested in portfolio companies": "cost", "fair value of portfolio": "carrying_value"}
+        for row in range(summary[0] + 5, min(sheet.max_row, summary[0] + 45) + 1):
+            field = control_labels.get(_normalise(_cell_text(sheet.cell(row, summary[1]).value)))
+            if field:
+                cell = sheet.cell(row, summary_cols[0])
+                result["controls"][field] = {"value": _money_to_number(cell.value, 1000), "source": f"{sheet.title}!{cell.coordinate}"}
+    return result
 
 
 def _format_portfolio_money(value: int | None) -> str:
@@ -1863,84 +1985,76 @@ def _format_portfolio_money(value: int | None) -> str:
     return f"${value:,}"
 
 
-def _latest_balance_values(financial_exhibits: dict[str, object] | None) -> dict[str, int]:
-    if not financial_exhibits:
-        return {}
-    sections = financial_exhibits.get("sections")
-    if not isinstance(sections, list):
-        return {}
-    values_by_label: dict[str, int] = {}
-    for section in sections:
-        if not isinstance(section, dict) or section.get("section") != "Balance Sheet":
-            continue
-        rows = section.get("rows")
-        if not isinstance(rows, list):
-            continue
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            label = str(row.get("label") or "").strip()
-            values = row.get("values")
-            if not label or not isinstance(values, list) or not values:
-                continue
-            latest = values[-1]
-            if not isinstance(latest, dict):
-                continue
-            latest_value = _money_to_number(latest.get("value"))
-            if latest_value is None:
-                continue
-            values_by_label[_normalise(label)] = latest_value * 1000
-    return values_by_label
-
-
-def _portfolio_summary_data(financial_exhibits: dict[str, object] | None) -> dict[str, object]:
-    latest_values = _latest_balance_values(financial_exhibits)
+def _portfolio_summary_data(financial_exhibits: dict[str, object] | None, period: str = "") -> dict[str, object]:
+    source = (financial_exhibits or {}).get("portfolio_source") or {}
+    warnings = list(source.get("warnings", []))
+    source_rows = source.get("rows", {})
+    controls = source.get("controls", {})
+    if not source or (period and source.get("period") != period):
+        source_rows = {}
+        controls = {}
+        warnings.append("Upload financial exhibits for the selected quarter to populate portfolio amounts.")
     rows: list[dict[str, object]] = []
     total_keys = ("cost", "carrying_value", "unrealized_gain_loss", "realized_gain_loss")
-    all_totals = {
-        "cost": 0,
-        "carrying_value": 0,
-        "unrealized_gain_loss": 0,
-        "realized_gain_loss": 0,
-    }
-    portfolio_totals = {key: 0 for key in total_keys}
+    metadata_source = "Approved report descriptions, investment dates and board seats; retained as instructed"
+    missing = {key: [] for key in (*total_keys, "ownership")}
     for row in PORTFOLIO_SUMMARY_ROWS:
-        cost = int(row["cost"])
-        carrying_value = latest_values.get(_normalise(row["source_label"]))
-        unrealized = carrying_value - cost if carrying_value is not None else None
-        realized = 0
-        rows.append(
-            {
-                "name": row["name"],
-                "description": row["description"],
-                "first_cash_injection": row["first_cash_injection"],
-                "ownership": row["ownership"],
-                "sv_board_seats": row["sv_board_seats"],
-                "cost": _format_portfolio_money(cost),
-                "carrying_value": _format_portfolio_money(carrying_value),
-                "unrealized_gain_loss": _format_portfolio_money(unrealized),
-                "realized_gain_loss": _format_portfolio_money(realized),
-                "section": row["section"],
-            }
-        )
-        row_totals = portfolio_totals if row["section"] == SECTION_PORTFOLIO_COMPANY else None
-        all_totals["cost"] += cost
-        if row_totals is not None:
-            row_totals["cost"] += cost
-        if carrying_value is not None:
-            all_totals["carrying_value"] += carrying_value
-            all_totals["unrealized_gain_loss"] += unrealized or 0
-            if row_totals is not None:
-                row_totals["carrying_value"] += carrying_value
-                row_totals["unrealized_gain_loss"] += unrealized or 0
-        all_totals["realized_gain_loss"] += realized
-        if row_totals is not None:
-            row_totals["realized_gain_loss"] += realized
+        current = source_rows.get(_portfolio_key(row["source_label"]), {})
+        cost, carrying = current.get("cost"), current.get("carrying_value")
+        amounts = {
+            "cost": cost, "carrying_value": carrying,
+            "unrealized_gain_loss": carrying - cost if cost is not None and carrying is not None else None,
+            "realized_gain_loss": current.get("realized_gain_loss"),
+        }
+        for field, amount in amounts.items():
+            if amount is None:
+                missing[field].append(row["name"])
+        ownership = current.get("ownership")
+        if ownership is None:
+            missing["ownership"].append(row["name"])
+        if current.get("first_cash_injection") and current["first_cash_injection"] != row["first_cash_injection"]:
+            warnings.append(f"{row['name']}: kept approved first cash injection {row['first_cash_injection']}; "
+                            f"workbook has {current['first_cash_injection']} at {current['sources']['first_cash_injection']}.")
+        rows.append({
+            **{key: row[key] for key in ("name", "description", "first_cash_injection", "sv_board_seats", "section")},
+            "ownership": ownership if ownership is not None else "-",
+            **{key: _format_portfolio_money(value) for key, value in amounts.items()},
+            "amounts": amounts,
+            "sources": {**current.get("sources", {}), "metadata": metadata_source,
+                        "first_cash_injection": metadata_source,
+                        "unrealized_gain_loss": "Carrying value less cost"},
+        })
+
+    def totals(selected_rows):
+        return {key: sum(row["amounts"][key] for row in selected_rows)
+                if all(row["amounts"][key] is not None for row in selected_rows) else None for key in total_keys}
+
+    all_totals = totals(rows)
+    portfolio_totals = totals([row for row in rows if row["section"] == SECTION_PORTFOLIO_COMPANY])
+    for key in ("cost", "carrying_value", "realized_gain_loss", "ownership"):
+        if missing[key]:
+            names = ", ".join(missing[key]) if len(missing[key]) < len(rows) else "all companies"
+            warnings.append(f"Missing current {key.replace('_', ' ')} for {names}; shown as '-' rather than zero.")
+    checks = []
+    for field in ("cost", "carrying_value"):
+        control = controls.get(field)
+        if not control:
+            warnings.append(f"No {field.replace('_', ' ')} control total for {period or source.get('period', 'the selected quarter')}; reconciliation unavailable.")
+            continue
+        calculated, expected = all_totals.get(field), control.get("value")
+        matched = calculated is not None and expected is not None and calculated == expected
+        checks.append({"field": field, "calculated": calculated, "expected": expected, "matches": matched, "source": control["source"]})
+        if not matched:
+            warnings.append(f"Portfolio {field.replace('_', ' ')} does not reconcile with {control['source']}; review before release.")
     return {
         "note": "*Note: Carrying value of each portfolio company is based on the last completed financing round",
+        "period": period or source.get("period", ""),
+        "metadata_source": metadata_source,
         "rows": rows,
         "portfolio_totals": {key: _format_portfolio_money(value) for key, value in portfolio_totals.items()},
         "totals": {key: _format_portfolio_money(value) for key, value in all_totals.items()},
+        "warnings": warnings,
+        "checks": checks,
     }
 
 
@@ -2033,7 +2147,7 @@ def build_figma_data_pack(
             },
         },
         "highlights": highlight_sections,
-        "portfolio_summary": _portfolio_summary_data(financial_exhibits),
+        "portfolio_summary": _portfolio_summary_data(financial_exhibits, f"{month_abbr[months[-1][1]]}-{str(months[-1][0])[-2:]}" if months else ""),
         "companies": report_companies,
         "operator_angels": operator_angels,
         "financial_exhibits": financial_exhibits,
@@ -2442,6 +2556,14 @@ def render_quarterly_report_page() -> None:
 
     with st.container(border=True):
         st.subheader("Figma handoff")
+        portfolio = figma_data_pack["portfolio_summary"]
+        with st.expander("Portfolio summary review", expanded=bool(portfolio["warnings"])):
+            for warning in portfolio["warnings"]:
+                st.warning(warning)
+            st.dataframe([{key: value for key, value in row.items() if key not in {"amounts", "sources"}}
+                          for row in portfolio["rows"]], hide_index=True, width="stretch")
+            if len(portfolio["checks"]) == 2 and all(check["matches"] for check in portfolio["checks"]):
+                st.success("Portfolio cost and carrying value totals match the selected quarter's financial summary.")
         render_figma_connection(figma_data_pack)
         handoff_cols = st.columns(3)
         handoff_cols[0].metric("Portfolio companies", included_company_count)
