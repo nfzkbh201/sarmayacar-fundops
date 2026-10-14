@@ -37,6 +37,23 @@ function runtime() {
       node.parent = this; this.children.push(node);
     }
     resize(w, h) { this.width = w; this.height = h; }
+    set textAutoResize(value) {
+      this.autoResize = value;
+      if (value !== 'HEIGHT') return;
+      // Deterministic wrapping model; actual typography is checked separately.
+      const capacity = Math.max(1, Math.floor(this.width / (this.fontSize * 0.52)));
+      let lines = 0;
+      for (const paragraph of String(this.characters || '').split('\n')) {
+        let used = 0;
+        lines += 1;
+        for (const word of paragraph.split(/\s+/)) {
+          if (used && used + 1 + word.length > capacity) { lines += 1; used = 0; }
+          used += (used ? 1 : 0) + word.length;
+        }
+      }
+      this.height = lines * this.fontSize * (this.lineHeight?.value || 135) / 100;
+    }
+    get textAutoResize() { return this.autoResize; }
     remove() {
       if (this.parent) this.parent.children = this.parent.children.filter(n => n !== this);
       for (const child of [...this.children]) child.remove();
@@ -77,7 +94,7 @@ function payload(quarter = 'Q2 2026') {
       metric_sections: [{ title: 'Metrics', units: "(Numbers in 000's)", rows: [
         { label: 'GTV', values: [{ actual: '123', forecast: '140' }] },
       ] }], metrics: [] }],
-    portfolio_summary: { rows: [{ name: 'Test investment', section: 'Portfolio Company' }, { name: 'Test angel', section: 'Operator Angel' }] },
+    portfolio_summary: { rows: [{ name: 'Trukker', section: 'Portfolio Company' }, { name: 'Taraki', section: 'Operator Angel' }] },
     operator_angels: [{ name: 'Test angel', description: 'Test', key_updates: [] }],
     financial_exhibits: { sections: [{ section: 'Balance Sheet', months: ['Jun-26'], rows: [{ label: 'Total Assets', values: [{ value: '100' }] }] }] },
   };
@@ -92,7 +109,7 @@ test('receives all report sections; repeated job and changed report do not dupli
   const rt = runtime();
   const unrelated = new rt.Node('FRAME'); unrelated.name = 'Personal notes'; rt.page.appendChild(unrelated);
   const first = await update(rt, payload(), 'job-1');
-  assert.equal(first.createdCount, 8);
+  assert.equal(first.createdCount, 9);
   const ids = rt.page.children.map(n => n.id);
   assert.ok(rt.page.children.some(n => n.name === '01 Cover'));
   assert.ok(rt.page.children.some(n => n.name === '04 Portfolio'));
@@ -106,6 +123,116 @@ test('receives all report sections; repeated job and changed report do not dupli
   assert.equal(unrelated.removed, false);
   assert.ok(rt.page.findOne(n => n.characters === 'Changed description'));
   assert.equal(rt.page.findOne(n => n.name === 'Company Page Template'), null);
+});
+
+const SUMMARY_GROUPS = [
+  ['Trukker', 'SimPaisa', 'Abhi', 'Bykea', 'Oladoc', 'TapMad', 'Revolving Games', 'OneLoad', 'Jiye Technologies', 'Roomy'],
+  ['Procheck', 'Patari', 'Dot & Line', 'Dawaai', 'Jugnu', 'Buyzilla', 'Taraki', 'Savvy Technologies', 'Delsys Technologies'],
+  ['Startup Early (Holistiq)', 'Scholar Den', 'House Call', 'Orko', 'L.L.M.Bots', 'Aabshar', 'Raptr Games'],
+];
+const SUMMARY_NAMES = ['04 Portfolio', '05 Portfolio Continued', '06 Portfolio Operator Angels'];
+const summaryFrames = rt => SUMMARY_NAMES.map(name => rt.page.children.find(n => n.name === name));
+const cellText = (frame, name) => frame.findOne(n => n.type === 'TEXT' && n.name === name)?.characters;
+
+test('portfolio layout always reserves the approved three pages and 26 rows', async () => {
+  const rt = runtime(), data = payload();
+  delete data.portfolio_summary;
+  await update(rt, data, 'empty-summary');
+  const frames = summaryFrames(rt);
+  frames.forEach((frame, i) => {
+    assert.ok(frame);
+    assert.deepEqual(frame.findAll(n => /row_\d+\.company$/.test(n.name)).map(n => n.characters), SUMMARY_GROUPS[i]);
+    assert.equal(cellText(frame, 'report.page_number'), String(i + 3).padStart(2, '0'));
+    assert.equal(frame.findAll(n => /^portfolio\.header_\d+\.text$/.test(n.name)).length, 9);
+    assert.equal(Boolean(frame.findOne(n => n.name === 'portfolio.operator_title')), i === 1);
+    assert.equal(Boolean(frame.findOne(n => n.name === 'portfolio.note')), i === 0);
+    assert.ok(frame.findAll(n => /row_\d+\.cost$/.test(n.name)).every(n => n.characters === '-'));
+  });
+  assert.equal(cellText(frames[1], 'portfolio.company.total_cost'), '-');
+  assert.equal(cellText(frames[2], 'portfolio.operator.total_cost'), '-');
+});
+
+test('shuffled rows and aliases keep their approved positions without changing any supplied field', async () => {
+  const rt = runtime(), data = payload();
+  const aliases = { Abhi: 'AbhiFinance', 'Jiye Technologies': 'Jiye Tech', Taraki: 'Bolandi Technologies',
+    'Savvy Technologies': 'Savvy Technologies (Inactive)', 'L.L.M.Bots': 'Truckistan' };
+  data.portfolio_summary = {
+    rows: SUMMARY_GROUPS.flat().map((name, i) => ({
+      name: aliases[name] || name, description: `Approved description ${i}`,
+      first_cash_injection: `Jan-${String(i).padStart(2, '0')}`, ownership: `${i}.5%`, sv_board_seats: 'Observer Seat',
+      cost: `$${i},123`, carrying_value: `$${i},456`, unrealized_gain_loss: `$(78${i})`, realized_gain_loss: '$0',
+    })).reverse(),
+    portfolio_totals: { cost: '$16,449,971', carrying_value: '$21,632,938', unrealized_gain_loss: '$5,182,967', realized_gain_loss: '$0' },
+    totals: { cost: '$16,924,971', carrying_value: '$22,075,199', unrealized_gain_loss: '$5,150,228', realized_gain_loss: '$0' },
+  };
+  const original = structuredClone(data);
+  await update(rt, data, 'ordered');
+  const frames = summaryFrames(rt);
+  const fields = { company: 'name', description: 'description', first_cash: 'first_cash_injection', ownership: 'ownership',
+    board: 'sv_board_seats', cost: 'cost', carrying: 'carrying_value', unrealized: 'unrealized_gain_loss', realized: 'realized_gain_loss' };
+  frames.forEach((frame, i) => {
+    const names = frame.findAll(n => /row_\d+\.company$/.test(n.name));
+    assert.deepEqual(names.map(n => n.characters), SUMMARY_GROUPS[i].map(n => aliases[n] || n));
+    for (const name of names) {
+      const row = data.portfolio_summary.rows.find(row => row.name === name.characters);
+      for (const [suffix, field] of Object.entries(fields)) {
+        assert.equal(cellText(frame, name.name.replace(/company$/, suffix)), row[field]);
+      }
+    }
+  });
+  for (const [index, prefix, key] of [[1, 'company', 'portfolio_totals'], [2, 'operator', 'totals']]) {
+    for (const [suffix, field] of Object.entries({ cost: 'cost', carrying: 'carrying_value', unrealized: 'unrealized_gain_loss', realized: 'realized_gain_loss' })) {
+      assert.equal(cellText(frames[index], `portfolio.${prefix}.total_${suffix}`), data.portfolio_summary[key][field]);
+    }
+  }
+  assert.deepEqual(data, original);
+});
+
+test('wrapped portfolio rows expand without overlap and keep columns aligned', async () => {
+  const rt = runtime(), data = payload();
+  data.portfolio_summary.rows[0].description = 'A carefully measured description that wraps over several lines while keeping the next row and all of its financial values safely below it. More approved text.';
+  await update(rt, data, 'wrap');
+  const frame = summaryFrames(rt)[0];
+  const description = frame.findOne(n => n.name === 'portfolio.company.row_1.description');
+  const next = frame.findOne(n => n.name === 'portfolio.company.row_2.company');
+  assert.ok(description.height > 50);
+  assert.ok(next.y >= description.y + description.height + 8);
+  assert.ok(frame.findOne(n => n.name === 'portfolio.company.row_1.bg').height >= description.height + 12);
+  for (const f of summaryFrames(rt)) {
+    assert.ok(f.findAll(n => n.type === 'TEXT' && n.name.startsWith('portfolio.')).every(n => n.y + n.height <= 1032));
+    const headers = f.findAll(n => /^portfolio\.header_\d+\.text$/.test(n.name));
+    assert.ok(headers.every(n => n.y + n.height <= 220));
+  }
+});
+
+test('all approved portfolio descriptions fit the fixed three-page layout', async () => {
+  const rt = runtime(), data = payload();
+  data.portfolio_summary.rows = JSON.parse(fs.readFileSync('tests/fixtures/portfolio_layout.json', 'utf8'));
+  await update(rt, data, 'approved-descriptions');
+  assert.equal(summaryFrames(rt).length, 3);
+  for (const frame of summaryFrames(rt)) {
+    const rows = frame.findAll(n => /row_\d+\.company$/.test(n.name));
+    rows.forEach((row, i) => {
+      const description = frame.findOne(n => n.name === row.name.replace(/company$/, 'description'));
+      assert.ok(description.y + description.height < 1032);
+      if (rows[i + 1]) assert.ok(description.y + description.height + 8 <= rows[i + 1].y);
+    });
+  }
+});
+
+test('unknown companies, duplicate aliases and oversized text fail without replacing the last report', async () => {
+  for (const [change, error] of [
+    [data => data.portfolio_summary.rows.push({ name: 'Unapproved company' }), /no position/],
+    [data => data.portfolio_summary.rows.push({ name: 'TRUKKER' }), /Duplicate portfolio/],
+    [data => { data.portfolio_summary.rows[0].description = 'Long description '.repeat(300); }, /footer boundary/],
+  ]) {
+    const rt = runtime();
+    await update(rt, payload(), 'good');
+    const ids = rt.page.children.map(n => n.id);
+    const invalid = payload(); change(invalid);
+    await assert.rejects(update(rt, invalid, 'invalid'), error);
+    assert.deepEqual(rt.page.children.map(n => n.id), ids);
+  }
 });
 
 test('a failed render preserves the previous report and removes staging content', async () => {
@@ -335,11 +462,11 @@ test('live HTTP service to plugin UI to renderer to completion, including a lost
   const listing = await publisher('/v1/connections');
   assert.equal(listing.connections[0].latest_job.id, first.id);
   assert.equal(listing.connections[0].latest_job.status, 'succeeded');
-  assert.equal(listing.connections[0].latest_job.result.page_count, 8);
+  assert.equal(listing.connections[0].latest_job.result.page_count, 9);
   const changed = payload(); changed.companies[0].description = 'Updated through the connection';
   await publisher('/v1/connections/' + connection.id + '/jobs', { request_id: 'second', payload: changed });
   await vm.runInContext('poll()', ui);
-  assert.equal(rt.page.children.length, 8);
+  assert.equal(rt.page.children.length, 9);
   assert.ok(rt.page.findOne(n => n.characters === 'Updated through the connection'));
   assert.equal((await publisher('/v1/connections')).connections[0].latest_job.status, 'succeeded');
 });

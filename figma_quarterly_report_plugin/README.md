@@ -26,7 +26,7 @@ For file import, expand `File import`, choose the JSON or paste it, and click
 - Cover
 - Contents
 - Highlights
-- Three portfolio summary pages when all portfolio rows are supplied
+- Three portfolio summary pages in the approved order on every import
 - One filled company page per included company
 - Filled highlights text when a `Quarterly Commentary` sheet is present
 - Filled operator angel pages from the commentary sheet
@@ -60,3 +60,25 @@ those frames, including manual edits inside them; older untagged imports and
 other quarters remain untouched. The plugin builds the replacement first and
 keeps the existing report if rendering fails. No extra Figma file or Page is
 created by the connection.
+
+## Fixed Portfolio Layout
+
+The three summary pages always follow Highlights, before company detail pages:
+
+- Printed page 03: Trukker, SimPaisa, Abhi, Bykea, Oladoc, TapMad, Revolving Games,
+  OneLoad, Jiye Technologies, Roomy; carrying-value footnote below the table.
+- Printed page 04: Procheck, Patari, Dot & Line, Dawaai, Jugnu, Buyzilla; portfolio
+  subtotal; Operator Angel Companies heading; Taraki, Savvy Technologies, Delsys Technologies.
+- Printed page 05: Startup Early (Holistiq), Scholar Den, House Call, Orko,
+  L.L.M.Bots, Aabshar, Raptr Games; grand total.
+
+All three pages share nine column widths, green headers, alternating row shading,
+bold company names and totals, centered financial cells, and footer placement.
+Rows expand to fit wrapped text. Content that exceeds the page boundary stops the
+import and leaves the previous report intact. Missing companies retain their row
+with blank data (`-`); unknown or duplicate companies require an explicit layout
+review instead of being silently omitted or moving the approved page breaks.
+
+This layout does not calculate or approve numbers. Supplied descriptions, dates,
+ownership, board seats, status labels, financial strings and totals pass through
+unchanged. Numerical mapping and reconciliation remain a separate review.

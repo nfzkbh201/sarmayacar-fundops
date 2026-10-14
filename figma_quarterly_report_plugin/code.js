@@ -273,55 +273,107 @@ async function createHighlights(x, y, report = {}) {
   return frame;
 }
 
+// Approved report order and page breaks are independent of workbook row order.
+const PORTFOLIO_ORDER = [
+  "Trukker", "SimPaisa", "Abhi", "Bykea", "Oladoc", "TapMad", "Revolving Games",
+  "OneLoad", "Jiye Technologies", "Roomy", "Procheck", "Patari", "Dot & Line",
+  "Dawaai", "Jugnu", "Buyzilla",
+];
+const PORTFOLIO_ANGEL_ORDER = [
+  "Taraki", "Savvy Technologies", "Delsys Technologies", "Startup Early (Holistiq)",
+  "Scholar Den", "House Call", "Orko", "L.L.M.Bots", "Aabshar", "Raptr Games",
+];
+const PORTFOLIO_XS = [46, 174, 563, 704, 874, 1038, 1202, 1358, 1509];
+const PORTFOLIO_WIDTHS = [124, 386, 136, 164, 158, 160, 153, 147, 141];
+const PORTFOLIO_NOTE = "*Note: Carrying value of each portfolio company is based on the last completed financing round";
+
+function portfolioIdentity(name) {
+  const key = String(name || "").toLowerCase().replace(/\((inactive|holistiq)\)/g, "").replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    abhifinance: "abhi", jiyetech: "jiyetechnologies", procheck1: "procheck",
+    buyzilla2: "buyzilla", dotandline: "dotline", bolandi: "taraki",
+    bolanditechnologies: "taraki", savvy: "savvytechnologies", holistiq: "startupearly",
+    truckistan: "llmbots", raptr: "raptrgames",
+  };
+  return aliases[key] || key;
+}
+
 function splitPortfolioRows(summary = {}) {
   const rows = Array.isArray(summary.rows) ? summary.rows : [];
-  const portfolioRows = rows.filter((row) => String(row.section || "").toLowerCase() !== "operator angel");
-  const operatorRows = rows.filter((row) => String(row.section || "").toLowerCase() === "operator angel");
+  const known = new Set([...PORTFOLIO_ORDER, ...PORTFOLIO_ANGEL_ORDER].map(portfolioIdentity));
+  const byName = new Map();
+  for (const row of rows) {
+    const key = portfolioIdentity(row.name);
+    if (!known.has(key)) throw new Error(`Portfolio layout has no position for "${row.name}". Update the approved company order before importing.`);
+    if (byName.has(key)) throw new Error(`Duplicate portfolio company "${row.name}". Review the data pack before importing.`);
+    byName.set(key, row);
+  }
+  // Reserve missing rows with blank data, never reuse another company's figures.
+  const ordered = (names) => names.map((name) => byName.get(portfolioIdentity(name)) || { name });
+  const portfolioRows = ordered(PORTFOLIO_ORDER);
+  const operatorRows = ordered(PORTFOLIO_ANGEL_ORDER);
   return [
-    { title: "04 Portfolio", pageNumber: "03", portfolioRows: portfolioRows.slice(0, 10), operatorRows: [] },
+    { title: "04 Portfolio", pageNumber: "03", portfolioRows: portfolioRows.slice(0, 10), operatorRows: [], showNote: true },
     { title: "05 Portfolio Continued", pageNumber: "04", portfolioRows: portfolioRows.slice(10), operatorRows: operatorRows.slice(0, 3), totalKey: "portfolio_totals" },
     { title: "06 Portfolio Operator Angels", pageNumber: "05", portfolioRows: [], operatorRows: operatorRows.slice(3), totalKey: "totals" },
-  ].filter((page) => page.portfolioRows.length || page.operatorRows.length);
+  ];
 }
 
 async function renderPortfolioHeaders(frame, y, prefix) {
   const headers = ["Company", "Description", "First Cash\nInjection", "Ownership", "SV Board\nSeats", "Cost ($)", "Carrying\nValue ($)", "Unrealized\nGain/Loss ($)", "Realized\nGain/Loss ($)"];
-  const xs = [46, 174, 563, 704, 874, 1038, 1202, 1358, 1509];
-  const widths = [124, 386, 136, 164, 158, 160, 153, 147, 141];
+  const xs = PORTFOLIO_XS;
+  const widths = PORTFOLIO_WIDTHS;
   for (let i = 0; i < headers.length; i += 1) {
     rect(frame, `${prefix}.header_${i + 1}`, xs[i], y, widths[i], 62, GREEN, 2);
-    await text(frame, `${prefix}.header_${i + 1}.text`, headers[i], xs[i] + 8, y + 14, widths[i] - 16, 40, 16, { color: WHITE, align: i > 1 ? "CENTER" : "LEFT" });
+    await text(frame, `${prefix}.header_${i + 1}.text`, headers[i], xs[i] + 8, y + 9, widths[i] - 16, 46, 16, { color: WHITE, align: i > 1 ? "CENTER" : "LEFT" });
   }
 }
 
+function portfolioCellValue(value) {
+  return value == null || value === "" ? "-" : String(value);
+}
+
 async function renderPortfolioRows(frame, rows, startY, prefix, totals = null) {
-  const xs = [46, 174, 563, 704, 874, 1038, 1202, 1358, 1509];
-  const widths = [124, 386, 136, 164, 158, 160, 153, 147, 141];
-  const rowH = 72;
+  const xs = PORTFOLIO_XS;
+  const widths = PORTFOLIO_WIDTHS;
+  let y = startY;
   for (let r = 0; r < rows.length; r += 1) {
     const row = rows[r] || {};
-    const y = startY + r * rowH;
-    if (r % 2 === 0) rect(frame, `${prefix}.row_${r + 1}.bg`, 46, y - 4, 1608, rowH, { r: 0.96, g: 0.96, b: 0.96 });
-    await text(frame, `${prefix}.row_${r + 1}.company`, row.name || "", xs[0] + 8, y + 8, widths[0] - 16, rowH - 8, 15, { bold: true, color: MID, lineHeight: 122 });
-    await text(frame, `${prefix}.row_${r + 1}.description`, row.description || "", xs[1] + 12, y + 8, widths[1] - 22, rowH - 8, 15, { color: MID, lineHeight: 128 });
-    await text(frame, `${prefix}.row_${r + 1}.first_cash`, row.first_cash_injection || "-", xs[2], y + 8, widths[2], 24, 15, { color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.row_${r + 1}.ownership`, row.ownership || "-", xs[3], y + 8, widths[3], 24, 15, { color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.row_${r + 1}.board`, row.sv_board_seats || "-", xs[4], y + 8, widths[4], 24, 15, { color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.row_${r + 1}.cost`, row.cost || "-", xs[5], y + 8, widths[5], 24, 15, { color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.row_${r + 1}.carrying`, row.carrying_value || "-", xs[6], y + 8, widths[6], 24, 15, { color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.row_${r + 1}.unrealized`, row.unrealized_gain_loss || "-", xs[7], y + 8, widths[7], 24, 15, { color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.row_${r + 1}.realized`, row.realized_gain_loss || "-", xs[8], y + 8, widths[8], 24, 15, { color: MID, align: "CENTER" });
+    const bg = r % 2 === 0 ? rect(frame, `${prefix}.row_${r + 1}.bg`, 46, y, 1608, 68, { r: 0.96, g: 0.96, b: 0.96 }) : null;
+    const company = await text(frame, `${prefix}.row_${r + 1}.company`, row.name || "", xs[0] + 8, y + 6, widths[0] - 16, 24, 14, { bold: true, color: MID, lineHeight: 135 });
+    const description = await text(frame, `${prefix}.row_${r + 1}.description`, row.description || "", xs[1] + 12, y + 6, widths[1] - 22, 24, 14, { color: MID, lineHeight: 138 });
+    company.textAutoResize = "HEIGHT";
+    description.textAutoResize = "HEIGHT";
+    const cells = [company, description];
+    const fields = [
+      ["first_cash", "first_cash_injection"], ["ownership", "ownership"], ["board", "sv_board_seats"],
+      ["cost", "cost"], ["carrying", "carrying_value"], ["unrealized", "unrealized_gain_loss"], ["realized", "realized_gain_loss"],
+    ];
+    for (let i = 0; i < fields.length; i += 1) {
+      const [suffix, field] = fields[i];
+      const cell = await text(frame, `${prefix}.row_${r + 1}.${suffix}`, portfolioCellValue(row[field]), xs[i + 2], y + 6, widths[i + 2], 24, 14, { color: MID, align: "CENTER" });
+      cell.textAutoResize = "HEIGHT";
+      cells.push(cell);
+    }
+    const rowH = Math.max(68, Math.ceil(Math.max(...cells.map((cell) => cell.height))) + 12);
+    if (bg) bg.resize(1608, rowH);
+    y += rowH;
   }
-  const afterRowsY = startY + rows.length * rowH;
+  const afterRowsY = y;
   if (totals && rows.length) {
     line(frame, `${prefix}.total_rule`, 46, afterRowsY + 3, 1608, DARK);
-    rect(frame, `${prefix}.total_bg`, 46, afterRowsY + 6, 1608, 30, LIGHT);
-    await text(frame, `${prefix}.total_label`, "Total", 62, afterRowsY + 10, 140, 18, 16, { bold: true, color: MID });
-    await text(frame, `${prefix}.total_cost`, totals.cost || "-", xs[5], afterRowsY + 10, widths[5], 18, 15, { bold: true, color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.total_carrying`, totals.carrying_value || "-", xs[6], afterRowsY + 10, widths[6], 18, 15, { bold: true, color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.total_unrealized`, totals.unrealized_gain_loss || "-", xs[7], afterRowsY + 10, widths[7], 18, 15, { bold: true, color: MID, align: "CENTER" });
-    await text(frame, `${prefix}.total_realized`, totals.realized_gain_loss || "-", xs[8], afterRowsY + 10, widths[8], 18, 15, { bold: true, color: MID, align: "CENTER" });
-    return afterRowsY + 52;
+    const bg = rect(frame, `${prefix}.total_bg`, 46, afterRowsY + 6, 1608, 30, LIGHT);
+    await text(frame, `${prefix}.total_label`, "Total", 62, afterRowsY + 10, 140, 24, 16, { bold: true, color: MID });
+    const fields = [["cost", "cost"], ["carrying", "carrying_value"], ["unrealized", "unrealized_gain_loss"], ["realized", "realized_gain_loss"]];
+    let totalHeight = 30;
+    for (let i = 0; i < fields.length; i += 1) {
+      const [suffix, field] = fields[i];
+      const cell = await text(frame, `${prefix}.total_${suffix}`, portfolioCellValue(totals[field]), xs[i + 5], afterRowsY + 10, widths[i + 5], 24, 15, { bold: true, color: MID, align: "CENTER" });
+      cell.textAutoResize = "HEIGHT";
+      totalHeight = Math.max(totalHeight, Math.ceil(cell.height) + 8);
+    }
+    bg.resize(1608, totalHeight);
+    return afterRowsY + totalHeight + 14;
   }
   return afterRowsY + 12;
 }
@@ -329,31 +381,35 @@ async function renderPortfolioRows(frame, rows, startY, prefix, totals = null) {
 async function createPortfolioPage(x, y, report = {}, page = {}, summary = {}) {
   const frame = createFrame(page.title || "04 Portfolio", x, y);
   await commonHeader(frame, "Investor Report", page.pageNumber || "03", report);
-  await text(frame, "portfolio.title", "PORTFOLIO", 46, 99, 200, 42, 34, { color: GREEN });
+  await text(frame, "portfolio.title", "PORTFOLIO", 46, 99, 200, 48, 34, { color: GREEN });
   line(frame, "portfolio.title_rule", 248, 115, 1406, GREEN);
   await renderPortfolioHeaders(frame, 158, "portfolio");
-  let nextY = 232;
-  const pageTotals = page.totalKey ? summary[page.totalKey] : null;
+  let nextY = 220;
+  const pageTotals = page.totalKey ? summary[page.totalKey] || {} : null;
   if (page.portfolioRows && page.portfolioRows.length) {
     nextY = await renderPortfolioRows(frame, page.portfolioRows, nextY, "portfolio.company", pageTotals);
-    if (pageTotals && summary.note) {
-      await text(frame, "portfolio.note", summary.note, 52, nextY + 8, 1200, 28, 16, { color: { r: 0.56, g: 0.56, b: 0.56 } });
-      nextY += 62;
-    }
   }
   if (page.operatorRows && page.operatorRows.length) {
-    await text(frame, "portfolio.operator_title", "OPERATOR ANGEL COMPANIES", 46, nextY + 6, 700, 42, 34, { color: GREEN });
-    nextY += 72;
-    await renderPortfolioRows(frame, page.operatorRows, nextY, "portfolio.operator", pageTotals && !(page.portfolioRows || []).length ? pageTotals : null);
+    if ((page.portfolioRows || []).length) {
+      await text(frame, "portfolio.operator_title", "OPERATOR ANGEL COMPANIES", 46, nextY + 4, 700, 46, 34, { color: GREEN });
+      nextY += 60;
+    }
+    nextY = await renderPortfolioRows(frame, page.operatorRows, nextY, "portfolio.operator", pageTotals && !(page.portfolioRows || []).length ? pageTotals : null);
+  }
+  if (page.showNote) {
+    line(frame, "portfolio.note_rule", 46, nextY, 1608, MID);
+    const note = await text(frame, "portfolio.note", summary.note || PORTFOLIO_NOTE, 52, nextY + 10, 1590, 24, 15, { color: MID });
+    note.textAutoResize = "HEIGHT";
+    nextY += note.height + 20;
+  }
+  if (nextY > 1032) {
+    throw new Error(`${frame.name}: portfolio content exceeds the footer boundary. Review long descriptions before importing.`);
   }
   return frame;
 }
 
 async function createPortfolioPages(x, y, report = {}, summary = {}) {
   const pages = splitPortfolioRows(summary);
-  if (!pages.length) {
-    return [await createPortfolioPage(x, y, report, { title: "04 Portfolio", pageNumber: "03", portfolioRows: [], operatorRows: [] }, summary)];
-  }
   const frames = [];
   for (let i = 0; i < pages.length; i += 1) {
     const frame = await createPortfolioPage(x + i * (PAGE_W + 90), y, report, pages[i], summary);
