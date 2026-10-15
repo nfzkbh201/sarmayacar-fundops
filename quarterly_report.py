@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import hashlib
 import os
 import re
 import tempfile
@@ -33,7 +34,7 @@ SECTION_HIGHLIGHTS = "Highlights"
 SECTION_PORTFOLIO_COMPANY = "Portfolio Company"
 SECTION_OPERATOR_ANGEL = "Operator Angel"
 FINANCIAL_EXHIBIT_SECTIONS = ("Balance Sheet", "Income Statement", "Financial Summary")
-PORTFOLIO_MAPPING_VERSION = "2026.10.15.1"
+PORTFOLIO_MAPPING_VERSION = "2026.10.15.2"
 
 OPERATOR_ANGEL_COMPANIES = (
     "Savvy Technologies",
@@ -2359,6 +2360,45 @@ def _latest_quarterly_outputs(limit: int = 8) -> list[dict[str, str]]:
     ]
 
 
+def _quarterly_workbook_scan(
+    monthly_bytes: bytes,
+    financial_bytes: bytes | None,
+    months: tuple[tuple[int, int], ...],
+    table_months: tuple[tuple[int, int], ...],
+) -> dict[str, object]:
+    cache_key = (
+        hashlib.sha256(monthly_bytes).hexdigest(),
+        hashlib.sha256(financial_bytes).hexdigest() if financial_bytes is not None else None,
+        months, table_months, PORTFOLIO_MAPPING_VERSION,
+    )
+    cached = st.session_state.get("quarterly_workbook_scan")
+    if cached and cached["key"] == cache_key:
+        return cached["data"]
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp)
+        workbook_path = tmp_dir / "monthly_reporting.xlsx"
+        workbook_path.write_bytes(monthly_bytes)
+        with st.spinner("Reading company pages from the monthly workbook"):
+            companies = parse_monthly_reporting_workbook(workbook_path, months, metric_months=table_months)
+            commentary_rows = _commentary_rows_from_workbook(workbook_path)
+            base_review_rows = _apply_commentary_rows(_review_rows(companies), commentary_rows)
+            commentary_workbook_bytes = build_monthly_workbook_with_commentary_sheet(workbook_path, base_review_rows, months)
+        financial_exhibits, financial_warnings = None, []
+        if financial_bytes is not None:
+            exhibits_path = tmp_dir / "financial_exhibits.xlsx"
+            exhibits_path.write_bytes(financial_bytes)
+            with st.spinner("Reading financial exhibits workbook"):
+                financial_exhibits, financial_warnings = parse_financial_exhibits_workbook(exhibits_path, months)
+    data = {
+        "companies": companies, "commentary_rows": commentary_rows,
+        "base_review_rows": base_review_rows, "commentary_workbook_bytes": commentary_workbook_bytes,
+        "financial_exhibits": financial_exhibits, "financial_warnings": financial_warnings,
+    }
+    # Uploaded data stays in this user's session, with only the current scan retained.
+    st.session_state["quarterly_workbook_scan"] = {"key": cache_key, "data": data}
+    return data
+
+
 def render_quarterly_report_page() -> None:
     st.header("Quarterly Report")
     st.caption("Generate editable company-page slides from the completed Monthly Reporting workbook. The Adobe XD PDF is used only as a format reference.")
@@ -2401,6 +2441,7 @@ def render_quarterly_report_page() -> None:
         )
 
     if monthly_report_file is None:
+        st.session_state.pop("quarterly_workbook_scan", None)
         st.info("Upload the completed Monthly Reporting workbook to build the review screen.")
         latest_rows = _latest_quarterly_outputs()
         if latest_rows:
@@ -2408,30 +2449,17 @@ def render_quarterly_report_page() -> None:
                 st.dataframe(latest_rows, hide_index=True, width="stretch")
         return
 
-    financial_exhibits = None
-    financial_exhibit_warnings: list[str] = []
-
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_dir = Path(tmp)
-        workbook_path = tmp_dir / "monthly_reporting.xlsx"
-        workbook_path.write_bytes(monthly_report_file.getbuffer())
-        with st.spinner("Reading company pages from the monthly workbook"):
-            companies = parse_monthly_reporting_workbook(workbook_path, months, metric_months=table_months)
-            commentary_rows = _commentary_rows_from_workbook(workbook_path)
-            base_review_rows = _apply_commentary_rows(_review_rows(companies), commentary_rows)
-            commentary_workbook_bytes = build_monthly_workbook_with_commentary_sheet(
-                workbook_path,
-                base_review_rows,
-                months,
-            )
-        if financial_exhibits_file is not None:
-            exhibits_path = tmp_dir / "financial_exhibits.xlsx"
-            exhibits_path.write_bytes(financial_exhibits_file.getbuffer())
-            with st.spinner("Reading financial exhibits workbook"):
-                financial_exhibits, financial_exhibit_warnings = parse_financial_exhibits_workbook(
-                    exhibits_path,
-                    months,
-                )
+    scan = _quarterly_workbook_scan(
+        monthly_report_file.getvalue(),
+        financial_exhibits_file.getvalue() if financial_exhibits_file is not None else None,
+        months, table_months,
+    )
+    companies = scan["companies"]
+    commentary_rows = scan["commentary_rows"]
+    base_review_rows = scan["base_review_rows"]
+    commentary_workbook_bytes = scan["commentary_workbook_bytes"]
+    financial_exhibits = scan["financial_exhibits"]
+    financial_exhibit_warnings = scan["financial_warnings"]
 
     parsed_count = sum(1 for company in companies if company.sheet_name)
     qoq_signal_count = sum(len(company.qoq_changes) for company in companies)
