@@ -13,6 +13,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 import streamlit as st
 
 CLIENT_USER_AGENT = "Sarmayacar-FundOps/1.0"
+HANDOFF_UI_VERSION = "2026.10.15.1"
 
 
 class BridgeError(RuntimeError):
@@ -73,7 +74,7 @@ def content_fingerprint(payload: dict) -> str:
 
 
 @st.fragment(run_every="5s")
-def render_transfer_status(client: BridgeClient, connection_id: str):
+def render_transfer_status(client: BridgeClient, connection_id: str, fingerprint: str):
     try:
         connections = client.request("GET", "/v1/connections")["connections"]
         connection = next((item for item in connections if item["id"] == connection_id), None)
@@ -89,7 +90,11 @@ def render_transfer_status(client: BridgeClient, connection_id: str):
             return
         result, quarter = job.get("result") or {}, job["quarter"]
         if job["status"] == "succeeded":
-            st.success(f"{quarter}: updated {result.get('page_count', 0)} report pages in Figma.")
+            sent = st.session_state.get(f"figma_last_sent_{connection_id}", {})
+            if sent.get("id") == job["id"] and sent.get("fingerprint") == fingerprint:
+                st.success(f"{quarter}: updated {result.get('page_count', 0)} report pages in Figma.")
+            else:
+                st.caption(f"Previous transfer: {quarter}, {result.get('page_count', 0)} pages. This report has not been sent yet.")
             if result.get("warning_count"):
                 st.warning(f"{result['warning_count']} report warnings. Review them in the Figma plugin.")
         elif job["status"] == "failed":
@@ -108,13 +113,22 @@ def render_figma_connection(payload: dict):
     url, token, access = (setting(name) for name in (
         "FIGMA_BRIDGE_URL", "FIGMA_BRIDGE_PUBLISHER_TOKEN", "FIGMA_BRIDGE_ACCESS_CODE"))
     if not url or not token or len(access) < 12:
+        st.button("Send to Figma", type="primary", icon=":material/send:", disabled=True, width="stretch")
         st.info("Direct Figma connection is awaiting setup. File import remains available below.")
         return
-    entered = st.text_input("Figma access code", type="password", key="figma_access_code")
-    if not hmac.compare_digest(entered.encode(), access.encode()):
-        if entered:
-            st.error("The Figma access code does not match.")
-        return
+    access_stamp = hmac.new(access.encode(), f"{url}\0{token}".encode(), hashlib.sha256).hexdigest()
+    if st.session_state.get("figma_unlocked_for") != access_stamp:
+        with st.form("figma_unlock", clear_on_submit=True):
+            entered = st.text_input("Figma access code", type="password", key="figma_access_code")
+            unlock = st.form_submit_button("Unlock Figma", icon=":material/lock_open:")
+        if unlock:
+            if hmac.compare_digest(entered.encode(), access.encode()):
+                st.session_state["figma_unlocked_for"] = access_stamp
+            else:
+                st.error("The Figma access code does not match.")
+        if st.session_state.get("figma_unlocked_for") != access_stamp:
+            st.button("Send to Figma", type="primary", icon=":material/send:", disabled=True, width="stretch", key="figma_send")
+            return
     try:
         client = BridgeClient(url, token)
         connections = client.request("GET", "/v1/connections")["connections"]
@@ -132,6 +146,7 @@ def render_figma_connection(payload: dict):
             if st.button("Refresh destinations", key="figma_refresh"):
                 st.rerun()
         if not paired:
+            st.button("Send to Figma", type="primary", icon=":material/send:", disabled=True, width="stretch", key="figma_send")
             return
         by_id = {item["id"]: item for item in paired}
         destination = st.selectbox("Figma destination", list(by_id), key="figma_destination",
@@ -142,20 +157,24 @@ def render_figma_connection(payload: dict):
         fingerprint = content_fingerprint(payload)
         if pending and pending["fingerprint"] != fingerprint:
             st.warning("The reviewed report has changed. Resolve the previous transfer before sending the changed report.")
-        if st.button("Retry send" if pending else "Send to Figma", type="primary", key="figma_send", width="stretch"):
+        if st.button("Retry send" if pending else "Send to Figma", type="primary", icon=":material/send:", key="figma_send", width="stretch"):
             if not pending:
                 pending = {"request_id": str(uuid.uuid4()), "fingerprint": fingerprint, "payload": payload}
                 st.session_state[pending_key] = pending
             try:
-                client.request("POST", f"/v1/connections/{destination}/jobs",
-                               {"request_id": pending["request_id"], "payload": pending["payload"]})
+                job = client.request("POST", f"/v1/connections/{destination}/jobs",
+                                     {"request_id": pending["request_id"], "payload": pending["payload"]})
             except BridgeError as error:
                 if not error.retryable:
                     st.session_state.pop(pending_key, None)
                 raise
+            st.session_state[f"figma_last_sent_{destination}"] = {"id": job.get("id"), "fingerprint": pending["fingerprint"]}
             st.session_state.pop(pending_key, None)
-        render_transfer_status(client, destination)
+        render_transfer_status(client, destination, fingerprint)
         with st.expander("Connection settings"):
+            if st.button("Lock Figma access", icon=":material/lock:", key="figma_lock"):
+                st.session_state.pop("figma_unlocked_for", None)
+                st.rerun()
             if st.checkbox("Revoke this connection", key=f"figma_revoke_confirm_{destination}"):
                 if st.button("Revoke", key=f"figma_revoke_{destination}"):
                     client.request("DELETE", f"/v1/connections/{destination}")

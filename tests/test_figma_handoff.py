@@ -16,6 +16,11 @@ CONNECTION = {"id": "destination", "name": "Quarterly", "target": {"file_name": 
               "online": True, "latest_job": None}
 
 
+def unlock(app, code="team-access-code"):
+    app.text_input(key="figma_access_code").set_value(code)
+    return app.button(key="FormSubmitter:figma_unlock-Unlock Figma").click().run()
+
+
 class HandoffTests(unittest.TestCase):
     def test_client_identifies_itself_to_hosted_service(self):
         with patch("figma_handoff.build_opener") as opener, patch("figma_handoff.json.load", return_value={}):
@@ -33,8 +38,10 @@ class HandoffTests(unittest.TestCase):
     def test_access_gate_prevents_network_calls(self):
         with patch.dict(os.environ, CONFIG), patch.object(BridgeClient, "request") as request:
             app = AppTest.from_string(SCRIPT).run()
-            app.text_input(key="figma_access_code").set_value("wrong").run()
+            self.assertTrue(app.button(key="figma_send").disabled)
+            unlock(app, "wrong")
             self.assertFalse(app.exception)
+            self.assertIn("does not match", app.error[0].value)
             request.assert_not_called()
 
     def test_connected_send_and_confirmation(self):
@@ -48,7 +55,9 @@ class HandoffTests(unittest.TestCase):
         CONNECTION["latest_job"] = None
         with patch.dict(os.environ, CONFIG), patch.object(BridgeClient, "request", request):
             app = AppTest.from_string(SCRIPT).run()
-            app.text_input(key="figma_access_code").set_value("team-access-code").run()
+            unlock(app)
+            self.assertFalse(app.button(key="figma_send").disabled)
+            self.assertFalse(any(method == "POST" for method, _, _ in calls))
             app.button(key="figma_send").click().run()
             self.assertFalse(app.exception)
             self.assertIn("updated 8 report pages", app.success[0].value)
@@ -82,13 +91,52 @@ class HandoffTests(unittest.TestCase):
             return {"connections": [{**CONNECTION, "latest_job": None}]}
         with patch.dict(os.environ, CONFIG), patch.object(BridgeClient, "request", request):
             app = AppTest.from_string(SCRIPT).run()
-            app.text_input(key="figma_access_code").set_value("team-access-code").run()
+            unlock(app)
             app.button(key="figma_send").click().run()
             self.assertIn("Connection interrupted", app.error[0].value)
             app.button(key="figma_send").click().run()
             self.assertFalse(app.exception)
         self.assertEqual(len(attempts), 2)
         self.assertEqual(attempts[0], attempts[1])
+
+    def test_unlock_persists_across_reruns_without_download_or_code_reentry(self):
+        connection = {**CONNECTION, "latest_job": None}
+        with patch.dict(os.environ, CONFIG), patch.object(BridgeClient, "request", return_value={"connections": [connection]}):
+            app = AppTest.from_string(SCRIPT).run()
+            unlock(app)
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertFalse(any(item.key == "figma_access_code" for item in app.text_input))
+            self.assertFalse(app.button(key="figma_send").disabled)
+            app.button(key="figma_lock").click().run()
+            self.assertTrue(app.button(key="figma_send").disabled)
+            self.assertTrue(any(item.key == "figma_access_code" for item in app.text_input))
+
+    def test_changed_access_settings_require_unlock_again(self):
+        with patch.dict(os.environ, CONFIG), patch.object(BridgeClient, "request", return_value={"connections": [{**CONNECTION, "latest_job": None}]}) as request:
+            app = AppTest.from_string(SCRIPT).run()
+            unlock(app)
+            request.reset_mock()
+            with patch.dict(os.environ, {"FIGMA_BRIDGE_ACCESS_CODE": "a-new-team-access-code"}):
+                app.run()
+            self.assertTrue(app.button(key="figma_send").disabled)
+            request.assert_not_called()
+
+    def test_unpaired_page_shows_setup_and_disabled_send(self):
+        with patch.dict(os.environ, CONFIG), patch.object(BridgeClient, "request", return_value={"connections": []}):
+            app = AppTest.from_string(SCRIPT).run()
+            unlock(app)
+            self.assertFalse(app.exception)
+            self.assertTrue(app.button(key="figma_send").disabled)
+            self.assertTrue(any(item.label == "Create pairing code" for item in app.button))
+
+    def test_previous_transfer_is_not_confirmation_for_current_report(self):
+        previous = {**CONNECTION, "latest_job": {"id": "old-job", "quarter": "Q2 2026", "status": "succeeded", "result": {"page_count": 25}}}
+        with patch.dict(os.environ, CONFIG), patch.object(BridgeClient, "request", return_value={"connections": [previous]}):
+            app = AppTest.from_string(SCRIPT).run()
+            unlock(app)
+            self.assertFalse(app.success)
+            self.assertTrue(any("This report has not been sent yet" in item.value for item in app.caption))
 
 
 if __name__ == "__main__":

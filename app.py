@@ -1,5 +1,6 @@
 import os
 import sys
+import importlib
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -1314,6 +1315,12 @@ with monthly_reporting_tab:
 
 
 with quarterly_report_tab:
-    from quarterly_report import render_quarterly_report_page
+    import figma_handoff
+    import quarterly_report
 
-    render_quarterly_report_page()
+    # Community Cloud can retain imported modules after pulling changes without a restart.
+    if getattr(figma_handoff, "HANDOFF_UI_VERSION", None) != "2026.10.15.1":
+        importlib.reload(figma_handoff)
+    if getattr(quarterly_report, "PORTFOLIO_MAPPING_VERSION", None) != "2026.10.15.1":
+        importlib.reload(quarterly_report)
+    quarterly_report.render_quarterly_report_page()

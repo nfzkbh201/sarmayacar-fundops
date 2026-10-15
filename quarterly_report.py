@@ -33,6 +33,7 @@ SECTION_HIGHLIGHTS = "Highlights"
 SECTION_PORTFOLIO_COMPANY = "Portfolio Company"
 SECTION_OPERATOR_ANGEL = "Operator Angel"
 FINANCIAL_EXHIBIT_SECTIONS = ("Balance Sheet", "Income Statement", "Financial Summary")
+PORTFOLIO_MAPPING_VERSION = "2026.10.15.1"
 
 OPERATOR_ANGEL_COMPANIES = (
     "Savvy Technologies",
@@ -2119,6 +2120,7 @@ def build_figma_data_pack(
 
     payload = {
         "schema_version": "sarmayacar.quarterly_report.v1",
+        "generator_version": PORTFOLIO_MAPPING_VERSION,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "report": {
             "quarter": quarter_label(months),
@@ -2557,25 +2559,28 @@ def render_quarterly_report_page() -> None:
     with st.container(border=True):
         st.subheader("Figma handoff")
         portfolio = figma_data_pack["portfolio_summary"]
-        with st.expander("Portfolio summary review", expanded=bool(portfolio["warnings"])):
+        total_cols = st.columns(3)
+        total_cols[0].metric("Total investment", portfolio["totals"]["cost"])
+        total_cols[1].metric("Portfolio carrying value", portfolio["totals"]["carrying_value"])
+        total_cols[2].metric("Unrealized gain/loss", portfolio["totals"]["unrealized_gain_loss"])
+        render_figma_connection(figma_data_pack)
+        with st.expander("Portfolio summary review"):
             for warning in portfolio["warnings"]:
                 st.warning(warning)
             st.dataframe([{key: value for key, value in row.items() if key not in {"amounts", "sources"}}
                           for row in portfolio["rows"]], hide_index=True, width="stretch")
             if len(portfolio["checks"]) == 2 and all(check["matches"] for check in portfolio["checks"]):
                 st.success("Portfolio cost and carrying value totals match the selected quarter's financial summary.")
-        render_figma_connection(figma_data_pack)
-        handoff_cols = st.columns(3)
-        handoff_cols[0].metric("Portfolio companies", included_company_count)
-        handoff_cols[1].metric("Operator angels", included_operator_count)
-        handoff_cols[2].metric("Financial exhibit sections", len((financial_exhibits or {}).get("sections", [])))
-        st.download_button(
-            "Download Figma data pack",
-            data=_json_download_bytes(figma_data_pack),
-            file_name=f"Sarmayacar {quarter_label(months)} Figma Data Pack.json",
-            mime="application/json",
-            width="stretch",
-        )
+        with st.expander("Download data pack", icon=":material/download:"):
+            st.download_button(
+                "Download Figma data pack",
+                data=_json_download_bytes(figma_data_pack),
+                file_name=f"Sarmayacar {quarter_label(months)} Figma Data Pack.json",
+                mime="application/json",
+                icon=":material/download:",
+                on_click="ignore",
+                width="stretch",
+            )
 
     generate = st.button(
         "Generate company pages PPTX",

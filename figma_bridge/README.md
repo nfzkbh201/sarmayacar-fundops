@@ -33,6 +33,12 @@ The preview uses an existing pack to test transport; the real Quarterly Report
 tab sends its current reviewed data directly. A successful transfer does not
 validate the underlying financial mappings or report layout.
 
+Unlock the handoff with the team access code once per Streamlit session using
+`Unlock Figma`. `Send to Figma` is the primary action; the optional JSON download
+is below it in `Download data pack` and does not trigger a report rebuild.
+Portfolio totals are shown before sending. A previous transfer is labeled as
+previous until the current report's own job is confirmed.
+
 ## Hosted Setup
 
 The Cloudflare Workers + D1 implementation and deployment instructions are in
