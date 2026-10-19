@@ -1321,6 +1321,6 @@ with quarterly_report_tab:
     # Community Cloud can retain imported modules after pulling changes without a restart.
     if getattr(figma_handoff, "HANDOFF_UI_VERSION", None) != "2026.10.15.1":
         importlib.reload(figma_handoff)
-    if getattr(quarterly_report, "PORTFOLIO_MAPPING_VERSION", None) != "2026.10.15.2":
+    if getattr(quarterly_report, "PORTFOLIO_MAPPING_VERSION", None) != "2026.10.19.1":
         importlib.reload(quarterly_report)
     quarterly_report.render_quarterly_report_page()

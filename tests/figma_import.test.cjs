@@ -105,6 +105,51 @@ async function update(rt, data, jobId) {
   return vm.runInContext('updateReport(data, jobId)', rt.context);
 }
 
+test('company tables retain forecast columns, currency gutters, full labels and real vertical borders', async () => {
+  const rt = runtime(), data = payload();
+  data.companies[0].metric_sections = [{ title: 'Key Financial & Operating Metrics', units: "(Numbers in 000's)",
+    table_x: 217, show_forecast: true, rows: [
+      { label: 'Professional Fees', currency: '$', values: [{ month: 'Jan 26', actual: '(16)', forecast: '-' }] },
+    ] }];
+  await update(rt, data, 'table-layout');
+  const frame = rt.page.children.find(n => n.name.startsWith('SimPaisa -'));
+  assert.ok(frame.findOne(n => n.characters === 'Professional Fees'));
+  assert.ok(frame.findOne(n => n.characters === 'Forecast'));
+  assert.ok(frame.findOne(n => n.characters === '$'));
+  const divider = frame.findOne(n => n.name === 'metrics.section_1.month_1.divider');
+  assert.equal(divider.width, 1);
+  assert.ok(divider.height > 50);
+  const row = frame.findOne(n => n.name === 'metrics.section_1.row_1.label');
+  assert.equal(row.fontSize, 14);
+  assert.ok(row.y + row.height < frame.findOne(n => n.name === 'metrics.bottom_rule').y);
+});
+
+test('wrapped updates move the table, unused bullets are hidden, and page numbers follow contents', async () => {
+  const rt = runtime(), data = payload();
+  data.companies[0].key_updates = ['A longer reviewed update '.repeat(20), 'Second update'];
+  data.companies[0].metric_sections[0].title = 'Key Financial & Operating Metrics';
+  await update(rt, data, 'wrapped-layout');
+  const frame = rt.page.children.find(n => n.name.startsWith('SimPaisa -'));
+  const last = frame.findOne(n => n.name === 'company.update_2');
+  const heading = frame.findOne(n => n.name === 'metrics.section_1.heading');
+  assert.ok(heading.y >= last.y + last.height + 17);
+  assert.equal(frame.findOne(n => n.name === 'company.update_3.bullet').visible, false);
+  assert.equal(cellText(frame, 'report.page_number'), '06');
+  const contents = rt.page.children.find(n => n.name === '02 Contents');
+  assert.equal(cellText(contents, 'contents.company_1.page'), '06');
+  assert.equal(cellText(contents, 'contents.operator_page'), '07');
+});
+
+test('an overflowing company table rejects the update without deleting the previous report', async () => {
+  const rt = runtime();
+  await update(rt, payload(), 'good');
+  const ids = rt.page.children.map(n => n.id);
+  const data = payload();
+  data.companies[0].metric_sections[0].rows = Array.from({ length: 40 }, () => ({ label: 'Metric', values: [{ actual: '1' }] }));
+  await assert.rejects(update(rt, data, 'overflow'), /table exceeds the page/);
+  assert.deepEqual(rt.page.children.map(n => n.id), ids);
+});
+
 test('receives all report sections; repeated job and changed report do not duplicate pages', async () => {
   const rt = runtime();
   const unrelated = new rt.Node('FRAME'); unrelated.name = 'Personal notes'; rt.page.appendChild(unrelated);
@@ -307,7 +352,7 @@ function uiRuntime(options = {}) {
   });
   const source = fs.readFileSync('figma_quarterly_report_plugin/ui.html', 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
   assert.doesNotThrow(() => vm.runInContext(source, ui));
-  const reply = { type: 'context', build: '2026.10.13.3', uiSession: messages[0]?.pluginMessage.uiSession, context: {
+  const reply = { type: 'context', build: '2026.10.19.1', uiSession: messages[0]?.pluginMessage.uiSession, context: {
     file_name: 'Test', page_name: 'Report', page_id: '1:2', target_id: '',
   } };
   return { ui, element, messages, requests, timers, reply, parent };
@@ -333,7 +378,7 @@ test('plugin UI accepts session-matched replies from Figma relays, not unrelated
   ui.window.onmessage({ source: {}, data: { pluginMessage: reply } });
   assert.equal(element('destination').textContent, 'Test / Report');
   assert.equal(element('connect').disabled, false);
-  assert.match(element('build').textContent, /Figma code 2026\.10\.13\.3/);
+  assert.match(element('build').textContent, /Figma code 2026\.10\.19\.1/);
   ui.window.onmessage({ source: ui.window, data: { pluginMessage: {
     ...reply, context: { ...reply.context, page_name: 'Host relay' },
   } } });
@@ -360,7 +405,7 @@ test('startup retries lost ready messages and reports a bounded diagnostic witho
   assert.equal(messages.length, 4);
   assert.ok(messages.every(m => m.pluginMessage.uiSession === messages[0].pluginMessage.uiSession));
   assert.equal([...timers.values()].filter(t => t.ms === 1500).length, 0);
-  ui.window.onmessage({ source: {}, data: { pluginMessage: { type: 'plugin-boot', build: '2026.10.13.3' } } });
+  ui.window.onmessage({ source: {}, data: { pluginMessage: { type: 'plugin-boot', build: '2026.10.19.1' } } });
   runTimer(8000);
   assert.match(element('connection-status').textContent, /did not complete the handshake/);
   assert.equal(element('connect').disabled, true);

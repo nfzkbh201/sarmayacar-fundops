@@ -51,9 +51,9 @@ Metric table placeholders:
 - `metric_1.month_1` through `metric_1.month_6`
 - repeat through `metric_10.*`
 
-New packs can supply multiple metric sections with Actual/Forecast columns.
-All report sections are editable Figma frames. Portfolio fields and company
-metrics still require the separate mapping validation work.
+New packs supply company-specific financial and operating metric sections with
+Actual/Forecast columns. Editable layers use `metrics.section_N.row_N.*` names;
+the ten legacy placeholder rows are removed when these sections are present.
 
 Imports now tag their generated frames. Reimporting the same quarter replaces
 those frames, including manual edits inside them; older untagged imports and
@@ -106,3 +106,27 @@ withhold the affected subtotal/total instead of producing a partial sum.
 The portfolio review checks grand cost and carrying value against the selected
 quarter's Financial Summary control totals. A different quarter's unversioned
 cost/ownership schedule cannot be paired with a historical balance column.
+
+## Company Table Rules
+
+`COMPANY_METRIC_SECTION_MAP` in `quarterly_report.py` fixes the row order, source
+block, currency and scaling separately for each of the eleven active companies.
+SimPaisa uses the USD block and includes interest in Total Income; Tapmad and
+OneLoad use their already-scaled reporting blocks. Procheck and Dot & Line remain
+in PKR thousands. Counts, occupancy percentages and per-trip values have separate
+formats. Each Actual/Forecast value records its source worksheet and cell.
+Missing rows remain visible as dashes and raise review warnings, never zeroes.
+
+The renderer uses Helvetica when available, with an explicit Inter fallback
+warning. Actual/Forecast columns remain visible even when forecasts are missing.
+Descriptions, bullets and row labels are measured before laying out the table;
+overflow rejects the update while preserving the existing report. Company order,
+contents entries and printed page numbers follow the generated report.
+
+Company-table checks: `python -m unittest discover -s tests -p 'test_company_tables.py'`.
+Plugin/transfer checks: `node --test tests/figma_import.test.cjs` (requires the
+project Python environment at `.venv`). For local visual checks with Playwright
+and Chrome installed, run `node tests/preview_company_tables.cjs DATA_PACK OUTPUT_DIR`.
+The preview executes the actual renderer with a measured browser test double,
+saves every company page and reports text overflow; it is not a substitute for
+the final import check inside Figma.

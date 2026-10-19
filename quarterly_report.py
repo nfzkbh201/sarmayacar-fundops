@@ -34,7 +34,7 @@ SECTION_HIGHLIGHTS = "Highlights"
 SECTION_PORTFOLIO_COMPANY = "Portfolio Company"
 SECTION_OPERATOR_ANGEL = "Operator Angel"
 FINANCIAL_EXHIBIT_SECTIONS = ("Balance Sheet", "Income Statement", "Financial Summary")
-PORTFOLIO_MAPPING_VERSION = "2026.10.15.2"
+PORTFOLIO_MAPPING_VERSION = "2026.10.19.1"
 
 OPERATOR_ANGEL_COMPANIES = (
     "Savvy Technologies",
@@ -947,40 +947,95 @@ def _extract_metrics(
     return selected, tuple(warnings)
 
 
+def _metric_section(rows, row_range, *, scale="thousands", currency="$", operating=False,
+                    units=None, overrides=None):
+    return {
+        "title": "" if operating else "Key Financial & Operating Metrics",
+        "units": ("" if operating else "(Numbers in 000's)") if units is None else units,
+        "scale": scale, "currency": currency, "rows": rows, "row_range": row_range,
+        "show_header": not operating, "show_forecast": True, "overrides": overrides or {},
+    }
+
+
+# Approved Q2 table order. Bounds distinguish the USD/reporting blocks from the
+# native-currency, raw-import and reconciliation tables on the same worksheet.
 COMPANY_METRIC_SECTION_MAP: dict[str, tuple[dict[str, object], ...]] = {
-    "SimPaisa": (
-        {
-            "title": "Key Financial & Operating Metrics",
-            "units": "(Numbers in 000's)",
-            "scale": "thousands",
-            "rows": (
-                ("Total GTV", "GTV"),
-                ("Net Revenue", "Net Revenue"),
-                ("Salaries", "Salaries"),
-                ("SG&A", "SG&A"),
-                ("Business Development", "Business Development"),
-                ("Professional Fees", "Professional Fees"),
-                ("Other expenses", "Other expenses"),
-                ("Total Expenses", "Total Expenses"),
-                ("Net Income (loss)", "Net Burn / Income"),
-            ),
-        },
-        {
-            "title": "",
-            "units": "(Numbers in 000's)",
-            "scale": "whole",
-            "show_header": False,
-            "rows": (
-                ("Wallet Transactions", "Wallet Transactions"),
-                ("Telco Transactions", "Telco Transactions"),
-                ("Card Transactions", "Card Transactions"),
-                ("Disbursement Transactions", "Disbursement Transactions"),
-                ("Total No. of Transactions", "Total No. of Transactions"),
-            ),
-            "note": "*Note: Transaction-level data for the quarter has not yet been shared by the company and is expected to be provided in the next quarterly update.",
-        },
+    "SimPaisa": (_metric_section((
+        ("Total GTV", "GTV"), ("Net Revenue", "Net Revenue"),
+        ("Interest Income", "Interest Income"), ("Salaries", "Salaries"),
+        ("SG&A", "SG&A"), ("Professional Fees", "Professional Fees"),
+        ("Other expenses", "Other expenses"), ("Total Expenses", "Total Expenses"),
+        ("Total Income", "Net Income"),
+    ), (47, 66)),),
+    "ABHI": (
+        _metric_section(tuple(row for row in COMPANY_METRIC_MAP["ABHI"]
+                              if row[0] not in ("Gross Profit", "Transactions (EWA + Payroll)")), (14, 26)),
+        _metric_section((("Transactions (EWA + Payroll)", "Transactions (EWA + Payroll)"),),
+                        (30, 30), scale="whole", currency="", operating=True),
+    ),
+    "Bykea": (
+        _metric_section(COMPANY_METRIC_MAP["Bykea"][:7], (16, 22)),
+        _metric_section((
+            ("Bookings / day", "Bookings / Day"), ("Net Tranactions/day", "Trips / Day"),
+            ("MAU (Monthly Active Users) Net", "MAU (Monthly Active Users)"),
+            ("MAD (Monthly Active Drivers)", "MAD (Monthly Active Drivers)"),
+            ("Fare/Trip", "Fare / Trip"), ("Burn / Trip", "Burn / Trip"),
+        ), (24, 42), scale="whole", currency="", operating=True,
+            overrides={"Fare/Trip": {"scale": "decimal", "currency": "$"},
+                       "Burn / Trip": {"scale": "decimal", "currency": "$"}}),
+    ),
+    "Oladoc": (
+        _metric_section(COMPANY_METRIC_MAP["Oladoc"][:11], (16, 31)),
+        _metric_section((
+            ("Total Bookings", "Total Bookings (Online + Offline)"),
+            ("Billed Bookings (0nline)", "Billed Bookings (Online)"),
+            ("Total Active Doctors", "Total Active Doctors"),
+        ), (35, 39), scale="whole", currency="", operating=True),
+    ),
+    "Tapmad": (
+        _metric_section(tuple(row for row in COMPANY_METRIC_MAP["Tapmad"][:12]
+                              if row[0] != "Gross Profit"), (46, 56), scale="whole"),
+        _metric_section(COMPANY_METRIC_MAP["Tapmad"][12:], (57, 58), scale="whole",
+                        currency="", operating=True, units="(Numbers in 000's)"),
+    ),
+    "Revolving Games": (_metric_section(COMPANY_METRIC_MAP["Revolving Games"], (15, 22)),),
+    "OneLoad": (
+        _metric_section(COMPANY_METRIC_MAP["OneLoad"][:9], (61, 72), scale="whole"),
+        _metric_section(COMPANY_METRIC_MAP["OneLoad"][9:], (76, 77), scale="whole",
+                        currency="", operating=True, units="(Numbers in 000's)"),
+    ),
+    "Jiye Technologies": (_metric_section((
+        ("Net revenue", "Net Revenue"), ("Gross Profit", "Gross Profit"),
+        ("Salaries", "Salaries"), ("Tech", "Tech"), ("Marketing", "Marketing"),
+        ("SG&A", "SG&A"), ("Others", "Other Expenses"),
+        ("Total Expenses", "Total Expenses"), ("Net Burn", "Net Burn"),
+    ), (44, 56)),),
+    "Roomy": (
+        _metric_section(COMPANY_METRIC_MAP["Roomy"][:8], (13, 21)),
+        _metric_section(COMPANY_METRIC_MAP["Roomy"][8:], (26, 28), scale="whole",
+                        currency="", operating=True, overrides={"Occupancy %": {"scale": "percent"}}),
+    ),
+    "Procheck": (
+        _metric_section((
+            ("Revenue (New Lines/Codes)", "Revenue (New lines/codes)"),
+            ("Revenue (Recurring Lines/Codes)", "Revenue (Recurring lines)"),
+            *COMPANY_METRIC_MAP["Procheck"][2:11],
+        ), (16, 26), scale="whole", currency="PKR"),
+        _metric_section(COMPANY_METRIC_MAP["Procheck"][11:], (28, 29), scale="whole",
+                        currency="", operating=True),
+    ),
+    "Dot & Line": (
+        _metric_section(COMPANY_METRIC_MAP["Dot & Line"][:9], (15, 24), currency="PKR",
+                        overrides={"Net Income (loss)": {"actual_row": 89}}),
+        _metric_section(COMPANY_METRIC_MAP["Dot & Line"][9:], (26, 27), scale="whole",
+                        currency="", operating=True),
     ),
 }
+
+COMPANY_REPORT_ORDER = (
+    "SimPaisa", "ABHI", "Bykea", "Oladoc", "Tapmad", "Revolving Games", "OneLoad",
+    "Jiye Technologies", "Roomy", "Procheck", "Dot & Line", "Dawaai", "Patari", "Buyzilla",
+)
 
 
 def _forecast_col_for_actual(sheet: Worksheet, actual_col: int) -> int | None:
@@ -993,15 +1048,40 @@ def _forecast_col_for_actual(sheet: Worksheet, actual_col: int) -> int | None:
 
 
 def _format_table_metric_value(value: object, *, scale: str) -> str:
-    if not _is_metric_value(value):
+    numeric = _table_number(value)
+    if numeric is None:
         return "-"
-    numeric = float(value)
     if scale == "thousands":
         numeric /= 1000
-    rounded = int(round(numeric))
-    if rounded < 0:
-        return f"({abs(rounded):,})"
-    return f"{rounded:,}"
+    elif scale == "percent":
+        if abs(numeric) > 1:
+            return "-"
+        numeric *= 100
+    precision = 2 if scale == "decimal" else 0
+    rounded = numeric.quantize(Decimal(10) ** -precision, rounding=ROUND_HALF_UP)
+    formatted = f"{abs(rounded):,.{precision}f}"
+    if numeric < 0:
+        return f"({formatted})"
+    return formatted
+
+
+def _table_number(value: object) -> Decimal | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, str):
+        # Some recent company cells contain literal accounting text, not numbers.
+        value = value.strip().replace(",", "")
+        value = re.sub(r"(?i)PKR|USD|\$", "", value).strip()
+        if re.fullmatch(r"\(\d+(?:\.\d+)?\)", value):
+            value = "-" + value[1:-1]
+        if not re.fullmatch(r"[+-]?\s*\d+(?:\.\d+)?", value):
+            return None
+        value = value.replace(" ", "")
+    try:
+        number = Decimal(str(value))
+        return number if number.is_finite() else None
+    except (InvalidOperation, ValueError):
+        return None
 
 
 def _company_metric_section_config(company: str) -> tuple[dict[str, object], ...]:
@@ -1016,7 +1096,7 @@ def _company_metric_section_config(company: str) -> tuple[dict[str, object], ...
             "title": "Key Financial & Operating Metrics",
             "units": "(Numbers in 000's)",
             "scale": "auto",
-            "rows": metric_map[:MAX_FIGMA_METRIC_ROWS],
+            "rows": metric_map,
         },
     )
 
@@ -1031,32 +1111,40 @@ def _extract_metric_sections(
     if not month_cols:
         return ()
 
-    first_month_col = min(month_cols.values())
-    label_rows = _metric_label_rows(sheet, first_month_col)
     formula_cache: dict[tuple[int, int], object] = {}
     sections: list[dict[str, object]] = []
     for section_index, section in enumerate(_company_metric_section_config(company)):
         scale = str(section.get("scale") or "auto")
+        bounds = section.get("row_range", (1, min(sheet.max_row, 160)))
+        label_rows = {}
+        label_col = {"Oladoc": 1, "Tapmad": 3}.get(company, 2)
+        for source_row in range(bounds[0], bounds[1] + 1):
+            label = _cell_text(sheet.cell(source_row, label_col).value)
+            if label:
+                label_rows.setdefault(_normalise(label), source_row)
         rows: list[dict[str, object]] = []
         for source_label, display_label in section.get("rows", ()):
             row = label_rows.get(_normalise(str(source_label)))
-            if row is None:
-                continue
-            row_scale = "whole" if "transaction" in _normalise(str(display_label)) else scale
+            override = section.get("overrides", {}).get(source_label, {})
+            actual_row = override.get("actual_row", row)
+            if "actual_row" in override and _normalise(_cell_text(sheet.cell(actual_row, label_col).value)) != "net income":
+                actual_row = None
+            row_scale = override.get("scale", scale)
             if row_scale == "auto":
                 row_scale = "thousands"
+            currency = override.get("currency", section.get("currency", ""))
             values: list[dict[str, object]] = []
             for year, month in months:
                 actual_col = month_cols.get((year, month))
                 forecast_col = _forecast_col_for_actual(sheet, actual_col) if actual_col else None
                 actual = (
-                    _resolved_formula_cell_value(sheet, formula_sheet, row, actual_col, formula_cache, set())
-                    if actual_col
+                    _resolved_formula_cell_value(sheet, formula_sheet, actual_row, actual_col, formula_cache, set())
+                    if actual_col and actual_row is not None
                     else None
                 )
                 forecast = (
                     _resolved_formula_cell_value(sheet, formula_sheet, row, forecast_col, formula_cache, set())
-                    if forecast_col
+                    if forecast_col and row is not None
                     else None
                 )
                 values.append(
@@ -1064,9 +1152,16 @@ def _extract_metric_sections(
                         "month": f"{month_abbr[month]} {str(year)[-2:]}",
                         "actual": _format_table_metric_value(actual, scale=row_scale),
                         "forecast": _format_table_metric_value(forecast, scale=row_scale),
+                        "source": {
+                            "sheet": sheet.title,
+                            "actual": sheet.cell(actual_row, actual_col).coordinate if actual_row and actual_col else None,
+                            "forecast": sheet.cell(row, forecast_col).coordinate if row and forecast_col else None,
+                            "scale": row_scale,
+                        },
                     }
                 )
-            rows.append({"label": display_label, "values": values})
+            rows.append({"label": display_label, "currency": currency, "values": values,
+                         "source_label": source_label, "source_missing": row is None})
         if rows:
             sections.append(
                 {
@@ -1074,6 +1169,11 @@ def _extract_metric_sections(
                     "title": str(section.get("title") or ""),
                     "units": str(section.get("units") or ""),
                     "show_header": bool(section.get("show_header", section_index == 0)),
+                    "show_forecast": bool(section.get("show_forecast", True)),
+                    "table_x": {"SimPaisa": 217, "ABHI": 208, "Bykea": 223, "Oladoc": 239,
+                                "Tapmad": 264, "Revolving Games": 241, "OneLoad": 241,
+                                "Jiye Technologies": 218, "Roomy": 267, "Procheck": 243,
+                                "Dot & Line": 207}.get(company, 243),
                     "rows": rows,
                     "note": str(section.get("note") or ""),
                 }
@@ -1164,7 +1264,15 @@ def parse_monthly_reporting_workbook(
             metrics, metric_warnings = _extract_metrics(sheet, formula_sheet, metric_months, profile.display_name)
             metric_sections = _extract_metric_sections(sheet, formula_sheet, metric_months, profile.display_name)
             company_warnings.extend(_text_warnings(description, key_updates))
-            company_warnings.extend(metric_warnings)
+            if metric_sections:
+                for section in metric_sections:
+                    for row in section["rows"]:
+                        if row["source_missing"]:
+                            company_warnings.append(f"Missing configured report row: {row['source_label']}.")
+                        elif any(value["actual"] == "-" for value in row["values"]):
+                            company_warnings.append(f"Report metric '{row['label']}' has missing actual values; shown as a dash, not zero.")
+            else:
+                company_warnings.extend(metric_warnings)
             companies.append(
                 CompanyReportData(
                     company=profile.display_name,
@@ -2119,6 +2227,8 @@ def build_figma_data_pack(
             }
         )
 
+    order = {name: index for index, name in enumerate(COMPANY_REPORT_ORDER)}
+    report_companies.sort(key=lambda item: order.get(item["name"], len(order)))
     payload = {
         "schema_version": "sarmayacar.quarterly_report.v1",
         "generator_version": PORTFOLIO_MAPPING_VERSION,
@@ -2322,6 +2432,7 @@ def build_company_pages_pptx(
 def _warning_rows(
     companies: tuple[CompanyReportData, ...],
     edited_rows: list[dict[str, object]] | None = None,
+    months: tuple[tuple[int, int], ...] | None = None,
 ) -> list[dict[str, str]]:
     by_company = {
         str(row.get("Item") or row.get("Company", "")): row
@@ -2341,6 +2452,10 @@ def _warning_rows(
             )
             warnings = [warning for warning in warnings if not warning.startswith(("Description", "Missing company", "Missing key", "Too many", "Key updates", "One or more bullets"))]
             warnings.extend(_text_warnings(description, updates))
+            if months:
+                mentions = set(re.findall(r"\bQ[1-4]\s+20\d{2}\b", " ".join(updates)))
+                if mentions and quarter_label(months) not in mentions:
+                    warnings.append(f"Commentary references {', '.join(sorted(mentions))}, not {quarter_label(months)}. Check the reviewed commentary period; text has not been rewritten.")
         for warning in warnings:
             rows.append({"Company": company.company, "Warning": warning})
     return rows
@@ -2463,7 +2578,7 @@ def render_quarterly_report_page() -> None:
 
     parsed_count = sum(1 for company in companies if company.sheet_name)
     qoq_signal_count = sum(len(company.qoq_changes) for company in companies)
-    warning_rows = _warning_rows(companies)
+    warning_rows = _warning_rows(companies, months=months)
 
     with st.container(border=True):
         st.subheader("Workbook scan")
@@ -2560,7 +2675,7 @@ def render_quarterly_report_page() -> None:
             },
         )
 
-    edited_warnings = _warning_rows(companies, edited_rows)
+    edited_warnings = _warning_rows(companies, edited_rows, months)
     if edited_warnings:
         with st.expander("Warnings after edits", expanded=True):
             st.caption("Warnings are review flags and do not block PPTX generation.")

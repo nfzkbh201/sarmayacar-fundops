@@ -1,5 +1,5 @@
 const sessionPage = figma.currentPage;
-const PLUGIN_BUILD = "2026.10.13.3";
+const PLUGIN_BUILD = "2026.10.19.1";
 let uiSession = "";
 let activeReportRoot = null;
 let busy = false;
@@ -16,6 +16,7 @@ const MID = { r: 103 / 255, g: 103 / 255, b: 103 / 255 };
 const LIGHT = { r: 243 / 255, g: 245 / 255, b: 247 / 255 };
 const LINE = { r: 213 / 255, g: 218 / 255, b: 220 / 255 };
 const WHITE = { r: 1, g: 1, b: 1 };
+let companyFontFamily = "Inter";
 
 const FIELD_LIMITS = {
   "company.description": 520,
@@ -37,6 +38,13 @@ function solid(color) {
 async function ensureFonts() {
   await figma.loadFontAsync({ family: "Inter", style: "Regular" });
   await figma.loadFontAsync({ family: "Inter", style: "Bold" });
+  try {
+    await figma.loadFontAsync({ family: "Helvetica", style: "Regular" });
+    await figma.loadFontAsync({ family: "Helvetica", style: "Bold" });
+    companyFontFamily = "Helvetica";
+  } catch (_) {
+    companyFontFamily = "Inter";
+  }
 }
 
 function append(parent, node) {
@@ -184,7 +192,7 @@ async function text(parent, name, value, x, y, w, h, size, options = {}) {
   node.x = x;
   node.y = y;
   node.resize(w, h);
-  node.fontName = { family: "Inter", style: options.bold ? "Bold" : "Regular" };
+  node.fontName = { family: options.fontFamily || "Inter", style: options.bold ? "Bold" : "Regular" };
   node.fontSize = size;
   node.lineHeight = { unit: "PERCENT", value: options.lineHeight || 135 };
   node.fills = solid(options.color || DARK);
@@ -192,6 +200,10 @@ async function text(parent, name, value, x, y, w, h, size, options = {}) {
   node.textAlignVertical = options.valign || "TOP";
   node.characters = value || "";
   return node;
+}
+
+async function companyText(parent, name, value, x, y, w, h, size, options = {}) {
+  return text(parent, name, value, x, y, w, h, size, { ...options, fontFamily: companyFontFamily });
 }
 
 function createFrame(name, x, y) {
@@ -574,7 +586,7 @@ function hasForecastValues(section) {
 }
 
 async function drawValueText(frame, name, value, x, y, w, options = {}) {
-  await text(frame, name, value || "-", x, y, w, options.h || 18, options.size || 12, {
+  await companyText(frame, name, value || "-", x, y, w, options.h || 18, options.size || 12, {
     color: options.color || MID,
     align: "RIGHT",
     bold: Boolean(options.bold),
@@ -588,90 +600,114 @@ async function drawMetricSection(frame, section, y, sectionIndex, report) {
   if (!rows.length || !maxMonths) return y;
 
   const labelX = 50;
-  const labelW = 285;
-  const tableX = 344;
-  const tableRight = 1604;
+  const tableX = Number(section.table_x) || 243;
+  const labelW = tableX - labelX - 8;
+  const tableRight = 1633;
   const monthW = (tableRight - tableX) / maxMonths;
-  const useForecast = hasForecastValues(section);
-  const rowH = rows.length > 9 ? 21 : 24;
-  const valueSize = rows.length > 9 || maxMonths >= 6 ? 11 : 12;
+  const useForecast = section.show_forecast !== undefined ? section.show_forecast : hasForecastValues(section);
+  const valueSize = 14;
 
   if (section.title) {
-    await text(frame, `metrics.section_${sectionIndex}.heading`, section.title, 48, y, 520, 28, 21, { color: DARK });
+    await companyText(frame, `metrics.section_${sectionIndex}.heading`, section.title, 48, y, 520, 28, 21, { color: DARK });
     y += 27;
   }
   if (section.units) {
-    await text(frame, `metrics.section_${sectionIndex}.units`, section.units, 50, y, 210, 18, 12, { color: MID });
-    y += 23;
+    await companyText(frame, `metrics.section_${sectionIndex}.units`, section.units, 50, y + 3, labelW, 20, 13, { color: MID });
   }
 
+  const headerY = y;
   if (section.show_header !== false) {
-    const headerY = y;
     for (let m = 0; m < maxMonths; m += 1) {
       const monthLabel = (rows[0].values && rows[0].values[m] && rows[0].values[m].month) || reportMonths[m] || "";
       rect(frame, `metrics.section_${sectionIndex}.month_${m + 1}.bg`, tableX + m * monthW, headerY, monthW - 4, 42, GREEN);
-      await text(frame, `metrics.section_${sectionIndex}.month_${m + 1}.label`, monthLabel, tableX + m * monthW, headerY + 11, monthW - 4, 18, 14, { color: WHITE, align: "CENTER", bold: true });
+      await companyText(frame, `metrics.section_${sectionIndex}.month_${m + 1}.label`, monthLabel.replace(/ ([0-9]{2})$/, "-$1"), tableX + m * monthW, headerY + 9, monthW - 4, 24, 16, { color: WHITE, align: "CENTER" });
       if (useForecast) {
         const subW = (monthW - 4) / 2;
-        await text(frame, `metrics.section_${sectionIndex}.month_${m + 1}.actual`, "Actual", tableX + m * monthW, headerY + 50, subW, 18, 12, { color: GREEN, align: "CENTER", bold: true });
-        await text(frame, `metrics.section_${sectionIndex}.month_${m + 1}.forecast`, "Forecast", tableX + m * monthW + subW, headerY + 50, subW, 18, 12, { color: { r: 0.58, g: 0.58, b: 0.58 }, align: "CENTER" });
-        line(frame, `metrics.section_${sectionIndex}.month_${m + 1}.divider`, tableX + m * monthW + subW, headerY + 42, 1, LINE);
+        await companyText(frame, `metrics.section_${sectionIndex}.month_${m + 1}.actual`, "Actual", tableX + m * monthW, headerY + 49, subW, 24, 16, { color: GREEN, align: "CENTER" });
+        await companyText(frame, `metrics.section_${sectionIndex}.month_${m + 1}.forecast`, "Forecast", tableX + m * monthW + subW, headerY + 49, subW, 24, 16, { color: { r: 0.58, g: 0.58, b: 0.58 }, align: "CENTER" });
       }
     }
-    y += useForecast ? 78 : 54;
+    y += useForecast ? 88 : 54;
   } else {
-    y += 3;
+    y += section.units ? 28 : 3;
   }
 
   for (let r = 0; r < rows.length; r += 1) {
     const row = rows[r];
-    const yRow = y + r * rowH;
-    const isTotal = String(row.label || "").toLowerCase().includes("total") || String(row.label || "").toLowerCase().includes("net burn");
-    await text(frame, `metrics.section_${sectionIndex}.row_${r + 1}.label`, cleanMetricLabel(row.label), labelX, yRow, labelW, rowH, valueSize, { color: DARK, bold: isTotal });
+    const yRow = y;
+    const label = await companyText(frame, `metrics.section_${sectionIndex}.row_${r + 1}.label`, row.label, labelX, yRow, labelW, 20, valueSize, { color: DARK, lineHeight: 130 });
+    label.textAutoResize = "HEIGHT";
+    const rowH = Math.max(25, label.height + 3);
     const values = row.values || [];
     for (let m = 0; m < maxMonths; m += 1) {
       const value = values[m] || {};
-      if (useForecast) {
-        const subW = (monthW - 4) / 2;
-        await drawValueText(frame, `metrics.section_${sectionIndex}.row_${r + 1}.month_${m + 1}.actual`, value.actual, tableX + m * monthW + 10, yRow, subW - 18, { size: valueSize, bold: isTotal, color: DARK });
-        await drawValueText(frame, `metrics.section_${sectionIndex}.row_${r + 1}.month_${m + 1}.forecast`, value.forecast, tableX + m * monthW + subW + 10, yRow, subW - 18, { size: valueSize, bold: isTotal, color: { r: 0.62, g: 0.62, b: 0.62 } });
-      } else {
-        await drawValueText(frame, `metrics.section_${sectionIndex}.row_${r + 1}.month_${m + 1}`, value.actual || value.value, tableX + m * monthW + 14, yRow, monthW - 28, { size: valueSize, bold: isTotal, color: DARK });
+      const cellW = (monthW - 4) / (useForecast ? 2 : 1);
+      for (const [half, field] of (useForecast ? [[0, "actual"], [1, "forecast"]] : [[0, "actual"]])) {
+        const x = tableX + m * monthW + half * cellW;
+        const color = half ? { r: 0.62, g: 0.62, b: 0.62 } : DARK;
+        const prefix = `metrics.section_${sectionIndex}.row_${r + 1}.month_${m + 1}.${field}`;
+        if (row.currency) await companyText(frame, `${prefix}.currency`, row.currency, x + 12, yRow, 30, 20, valueSize, { color });
+        await drawValueText(frame, useForecast ? prefix : prefix.replace(/\.actual$/, ""), value[field] || value.value,
+          x + (row.currency ? 38 : 8), yRow, cellW - (row.currency ? 48 : 18), { size: valueSize, color, h: 22 });
       }
     }
+    y += rowH;
   }
 
-  y += rows.length * rowH + 18;
-  line(frame, `metrics.section_${sectionIndex}.bottom_rule`, 46, y, 1608, sectionIndex === 1 ? LINE : { r: 0.32, g: 0.32, b: 0.32 });
-  return y + 12;
+  if (section.show_header !== false) {
+    for (let m = 0; m < maxMonths; m += 1) {
+      const x = tableX + m * monthW;
+      rect(frame, `metrics.section_${sectionIndex}.month_${m + 1}.left_border`, x, headerY + 42, 1, y - headerY - 37, GREEN);
+      rect(frame, `metrics.section_${sectionIndex}.month_${m + 1}.right_border`, x + monthW - 4, headerY + 42, 1, y - headerY - 37, MID);
+      if (useForecast) rect(frame, `metrics.section_${sectionIndex}.month_${m + 1}.divider`, x + (monthW - 4) / 2, headerY + 42, 1, y - headerY - 37, LINE);
+      line(frame, `metrics.section_${sectionIndex}.month_${m + 1}.bottom`, x, y + 5, monthW - 4, LINE);
+    }
+  }
+  return y + 26;
 }
 
-async function drawCompanyMetricSections(frame, company, report) {
+async function drawCompanyMetricSections(frame, company, report, startY = 439) {
   const sections = metricSections(company);
   if (!sections.length) return false;
   removeNodesByPrefixes(frame, ["metric_", "metrics.", "source.company", "notes.disclaimer"]);
-  let y = 439;
+  let y = startY;
   let note = "";
   for (let i = 0; i < sections.length; i += 1) {
+    if (i) line(frame, `metrics.section_${i + 1}.top_rule`, 46, y - 9, 1608, MID);
     y = await drawMetricSection(frame, sections[i], y, i + 1, report);
     if (sections[i].note) note = sections[i].note;
   }
-  const sourceY = Math.min(984, Math.max(900, y + 6));
-  await text(frame, "source.company", "Source: Company Information", 48, sourceY, 400, 24, 14, { bold: true, color: { r: 0.56, g: 0.56, b: 0.56 } });
-  await text(frame, "notes.disclaimer", company.notes || note || "", 46, sourceY + 34, 1500, 30, 11, { bold: true, color: { r: 0.56, g: 0.56, b: 0.56 } });
+  const noteText = company.notes || note || "";
+  const sourceY = Math.max(noteText ? 946 : 967, y);
+  if (sourceY > 987) throw new Error(`${company.name}: table exceeds the page. Shorten the reviewed commentary before sending.`);
+  line(frame, "metrics.bottom_rule", 46, sourceY, 1610, MID);
+  await companyText(frame, "source.company", "Source: Company Information", 48, sourceY + 12, 500, 24, 14, { bold: true, color: { r: 0.56, g: 0.56, b: 0.56 } });
+  const noteNode = await companyText(frame, "notes.disclaimer", noteText, 46, sourceY + 44, 1580, 20, 12, { bold: true, color: { r: 0.56, g: 0.56, b: 0.56 } });
+  noteNode.textAutoResize = "HEIGHT";
+  if (noteText && noteNode.y + noteNode.height > 1038) throw new Error(`${company.name}: footnote exceeds the page. The previous report was kept.`);
   return true;
 }
 
 async function fillCompanyFrame(frame, company, report, warnings) {
+  for (const node of frame.findAll((item) => item.type === "TEXT" && item.name.startsWith("company."))) {
+    node.fontName = { family: companyFontFamily, style: node.fontName.style };
+  }
   const nodes = collectNodesByName(frame);
   await setText(nodes, "company.name", (company.name || "").toUpperCase(), warnings);
+  const companyName = nodes.get("company.name");
+  companyName.lineHeight = { unit: "PERCENT", value: 110 };
+  companyName.textAutoResize = "WIDTH_AND_HEIGHT";
   const titleRule = nodes.get("company.title_rule");
   if (titleRule && "resize" in titleRule) {
-    const start = titleRuleStart(46, (company.name || "").toUpperCase(), 34, true, 215);
+    const start = Math.max(217, 46 + companyName.width + 20);
     titleRule.x = start;
     titleRule.resize(Math.max(80, 1654 - start), titleRule.height);
   }
   await setText(nodes, "company.description", company.description || "", warnings);
+  const description = nodes.get("company.description");
+  description.textAutoResize = "HEIGHT";
+  const updatesHeading = nodes.get("company.updates_heading");
+  updatesHeading.y = Math.max(267, description.y + description.height + 19);
 
   const reportMonths = report.months || [];
   for (let index = 1; index <= 6; index += 1) {
@@ -679,8 +715,19 @@ async function fillCompanyFrame(frame, company, report, warnings) {
   }
 
   const updates = company.key_updates || [];
+  if (updates.length > 4) throw new Error(`${company.name}: more than four update bullets need review.`);
+  let updatesY = updatesHeading.y + 33;
   for (let index = 1; index <= 4; index += 1) {
     await setText(nodes, `company.update_${index}`, updates[index - 1] || "", warnings);
+    const update = nodes.get(`company.update_${index}`);
+    const bullet = nodes.get(`company.update_${index}.bullet`);
+    update.visible = bullet.visible = Boolean(updates[index - 1]);
+    update.y = updatesY;
+    update.resize(1565, 28);
+    update.lineHeight = { unit: "PERCENT", value: 170 };
+    update.textAutoResize = "HEIGHT";
+    bullet.y = updatesY + 8;
+    if (update.visible) updatesY += update.height + 3;
   }
 
   const metrics = company.metrics || [];
@@ -693,7 +740,7 @@ async function fillCompanyFrame(frame, company, report, warnings) {
       await setText(nodes, `metric_${metricIndex}.month_${monthIndex}`, value.value || "", warnings);
     }
   }
-  const drewDynamicMetrics = await drawCompanyMetricSections(frame, company, report);
+  const drewDynamicMetrics = await drawCompanyMetricSections(frame, company, report, Math.max(424, updatesY + 17));
   if (!drewDynamicMetrics) {
     await setText(nodes, "notes.disclaimer", company.notes || "", warnings);
   }
@@ -833,6 +880,7 @@ async function importCompanies(data) {
   await ensureFonts();
   const report = data.report || {};
   const warnings = [];
+  if (companyFontFamily !== "Helvetica") warnings.push("Helvetica is unavailable; company pages used Inter. Enable local fonts to match the approved report typeface.");
   const frontMatterFrames = await ensureReportFrontMatter(report, warnings, data.portfolio_summary || {});
   const template = await findOrCreateCompanyTemplate(report);
   const spacing = template.width + 90;
@@ -856,6 +904,23 @@ async function importCompanies(data) {
   created.push(...await createOperatorAngelPages(operatorAngels, operatorStartX, operatorStartY, report));
   created.push(...await createFinancialExhibitPages(data.financial_exhibits, operatorStartX, operatorStartY + PAGE_H + 90, report));
 
+  // Printed page numbers and contents follow the generated pages, not old
+  // hard-coded company positions or the order of the review-sheet rows.
+  for (let index = 1; index < created.length; index += 1) {
+    const nodes = collectNodesByName(created[index]);
+    if (nodes.has("report.page_number")) await setText(nodes, "report.page_number", String(index).padStart(2, "0"), warnings);
+  }
+  const contents = created.find((frame) => frame.name === "02 Contents");
+  if (contents) {
+    const nodes = collectNodesByName(contents);
+    const firstCompanyIndex = frontMatterFrames.length;
+    await setText(nodes, "contents.company_list", "", warnings);
+    for (let index = 0; index < companies.length; index += 1) {
+      await text(contents, `contents.company_${index + 1}.name`, companies[index].name, 1080, 384 + index * 30, 350, 26, 16, { color: MID });
+      await text(contents, `contents.company_${index + 1}.page`, String(firstCompanyIndex + index).padStart(2, "0"), 1444, 384 + index * 30, 54, 26, 16, { color: MID, align: "RIGHT" });
+    }
+    await setText(nodes, "contents.operator_page", String(firstCompanyIndex + companies.length).padStart(2, "0"), warnings);
+  }
   template.remove();
   return { createdCount: created.length, warnings, frames: created };
 }

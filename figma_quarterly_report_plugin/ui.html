@@ -23,7 +23,7 @@
 </head>
 <body>
   <h1>Sarmayacar Quarterly Report</h1>
-  <div id="build" class="note">Build 2026.10.13.3</div>
+  <div id="build" class="note">Build 2026.10.19.1</div>
   <div id="destination"></div>
   <div id="setup">
     <label for="service">Service URL</label>
@@ -52,7 +52,7 @@
   </details>
   <script>
     const $ = (id) => document.getElementById(id);
-    const UI_BUILD = "2026.10.13.3";
+    const UI_BUILD = "2026.10.19.1";
     const PLUGIN_ID = "sarmayacar-quarterly-report-importer";
     const send = (message) => parent.postMessage({ pluginId: PLUGIN_ID, pluginMessage: { ...message, uiSession } }, "*");
     let uiSession, startupTimer, startupRetryTimer, startupAttempts = 0, mainBuild = "";
